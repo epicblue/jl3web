@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子书上传下载</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="file"] {
+            padding: 5px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 5px 10px;
+        }
+        #download-list {
+            margin-top: 20px;
+        }
+        .book-item {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>电子书上传下载</h1>
+
+<!-- 上传表单 -->
+<form id="upload-form">
+    <label for="title">书名:</label>
+    <input type="text" id="title" required>
+    <label for="author">作者:</label>
+    <input type="text" id="author" required>
+    <label for="file">选择文件:</label>
+    <input type="file" id="file" required>
+    <button type="submit">上传</button>
+</form>
+
+<!-- 下载列表 -->
+<div id="download-list">
+    <h2>已上传电子书</h2>
+    <ul id="books"></ul>
+</div>
+
+<script>
+    // 上传表单提交事件
+    document.getElementById('upload-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const title = document.getElementById('title').value;
+        const author = document.getElementById('author').value;
+        const file = document.getElementById('file').files[0];
+        
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('author', author);
+        formData.append('file', file);
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            // 刷新书籍列表
+            loadBooks();
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    // 加载书籍列表
+    function loadBooks() {
+        fetch('/books')
+        .then(response => response.json())
+        .then(data => {
+            const booksList = document.getElementById('books');
+            booksList.innerHTML = ''; // 清空列表
+            
+            data.forEach(book => {
+                const li = document.createElement('li');
+                li.className = 'book-item';
+                li.textContent = `${book.title} - ${book.author}`;
+                const downloadButton = document.createElement('button');
+                downloadButton.textContent = '下载';
+                downloadButton.onclick = () => {
+                    window.location.href = `/download/${book.id}`;
+                };
+                li.appendChild(downloadButton);
+                booksList.appendChild(li);
+            });
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // 初始化加载书籍列表
+    loadBooks();
+</script>
+
+</body>
+</html>
