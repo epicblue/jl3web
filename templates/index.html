@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>电子书上传下载</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -39,6 +41,8 @@
     <input type="text" id="author" required>
     <label for="file">选择文件:</label>
     <input type="file" id="file" required>
+    <label for="tags">标签 (用逗号分隔):</label>
+    <input type="text" id="tags">
     <button type="submit">上传</button>
 </form>
 
@@ -56,11 +60,13 @@
         const title = document.getElementById('title').value;
         const author = document.getElementById('author').value;
         const file = document.getElementById('file').files[0];
-        
+        const tags = document.getElementById('tags').value;
+
         const formData = new FormData();
         formData.append('title', title);
         formData.append('author', author);
         formData.append('file', file);
+        formData.append('tags', tags);
 
         fetch('/upload', {
             method: 'POST',
@@ -86,7 +92,7 @@
             data.forEach(book => {
                 const li = document.createElement('li');
                 li.className = 'book-item';
-                li.textContent = `${book.title} - ${book.author}`;
+                li.textContent = `${book.title} - ${book.author} - Tags: ${book.tags.join(', ')}`;
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = '下载';
                 downloadButton.onclick = () => {
