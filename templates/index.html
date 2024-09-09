@@ -27,6 +27,38 @@
         .book-item {
             margin-bottom: 10px;
         }
+        .tag-item {
+            display: inline-block;
+            background-color: #f1f1f1;
+            padding: 5px 10px;
+            margin-right: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .tag-item:hover {
+            background-color: #e1e1e1;
+        }
+        .add-tag-button {
+            padding: 5px 10px;
+            margin-left: 5px;
+        }
+        .add-tag-input {
+            display: none;
+            position: absolute;
+            z-index: 1000;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .add-tag-input input[type="text"] {
+            width: 300px;
+            padding: 5px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -92,12 +124,39 @@
             data.forEach(book => {
                 const li = document.createElement('li');
                 li.className = 'book-item';
-                li.textContent = `${book.title} - ${book.author} - Tags: ${book.tags.join(', ')}`;
+                li.textContent = `${book.title} - ${book.author}`;
+
+                // 添加标签列表
+                const tagsContainer = document.createElement('span');
+                tagsContainer.className = 'tags-container';
+
+                book.tags.forEach(tag => {
+                    const tagItem = document.createElement('span');
+                    tagItem.className = 'tag-item';
+                    tagItem.textContent = tag + ' ';
+                    tagItem.addEventListener('click', function() {
+                        deleteTag(book.id, tag); // 调用删除标签的函数
+                    });
+                    tagsContainer.appendChild(tagItem);
+                });
+
+                const addTagButton = document.createElement('button');
+                addTagButton.className = 'add-tag-button';
+                addTagButton.textContent = '添加标签';
+                addTagButton.addEventListener('click', function() {
+                    showAddTagInput(book.id);
+                });
+
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = '下载';
                 downloadButton.onclick = () => {
                     window.location.href = `/download/${book.id}`;
                 };
+
+                li.appendChild(tagsContainer);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
+                li.appendChild(addTagButton);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
                 li.appendChild(downloadButton);
                 booksList.appendChild(li);
             });
@@ -105,8 +164,77 @@
         .catch(error => console.error('Error:', error));
     }
 
+    // 删除标签的函数
+    function deleteTag(ebookId, tagName) {
+        fetch(`/tags/${ebookId}/${tagName}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'Tag deleted successfully') {
+                alert('标签删除成功');
+                loadBooks(); // 刷新书籍列表
+            } else {
+                alert('删除标签失败');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // 显示添加标签的输入框
+    function showAddTagInput(ebookId) {
+        const addTagInput = document.getElementById('add-tag-input');
+        addTagInput.style.display = 'block';
+        addTagInput.querySelector('input[type="text"]').value = '';
+        addTagInput.querySelector('.add-tag-cancel').addEventListener('click', function() {
+            addTagInput.style.display = 'none';
+        });
+        addTagInput.querySelector('.add-tag-confirm').addEventListener('click', function() {
+            const newTag = addTagInput.querySelector('input[type="text"]').value.trim();
+            if (newTag) {
+                addTag(ebookId, newTag);
+                addTagInput.style.display = 'none';
+            } else {
+                alert('请输入有效的标签');
+            }
+        });
+    }
+
+    // 添加标签的函数
+    function addTag(ebookId, tagName) {
+        fetch(`/tags/${ebookId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ tag: tagName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'Tag added successfully') {
+                alert('标签添加成功');
+                loadBooks(); // 刷新书籍列表
+            } else {
+                alert('添加标签失败');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
     // 初始化加载书籍列表
     loadBooks();
+
+    // 添加添加标签的输入框
+    const addTagInput = document.createElement('div');
+    addTagInput.id = 'add-tag-input';
+    addTagInput.className = 'add-tag-input';
+    addTagInput.innerHTML = `
+        <input type="text" placeholder="输入新标签">
+        <button class="add-tag-cancel">取消</button>
+        <button class="add-tag-confirm">确认</button>
+    `;
+    document.body.appendChild(addTagInput);
+    addTagInput.style.display = 'none';
 </script>
 
 </body>

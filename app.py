@@ -88,7 +88,43 @@ def delete_tag(tag_id):
         return jsonify({"message": "Tag deleted successfully"}), 200
     else:
         return jsonify({"error": "Tag not found"}), 404
-    
+@app.route('/tags/<int:ebook_id>', methods=['POST'])
+def add_tag(ebook_id):
+    data = request.get_json()
+    tag_name = data.get('tag')
+
+    ebook = Ebook.query.get(ebook_id)
+    if not ebook:
+        return jsonify({'message': 'Ebook not found'}), 404
+
+    tag = Tag.query.filter_by(name=tag_name).first()
+    if not tag:
+        tag = Tag(name=tag_name)
+        db.session.add(tag)
+
+    if tag not in ebook.tags:
+        ebook.tags.append(tag)
+        db.session.commit()
+        return jsonify({'message': 'Tag added successfully'}), 201
+    else:
+        return jsonify({'message': 'Tag already exists for this ebook'}), 400
+
+
+@app.route('/tags/<int:ebook_id>/<string:tag_name>', methods=['DELETE'])
+def delete_ebook_tag(ebook_id, tag_name):
+    ebook = Ebook.query.get(ebook_id)
+    if ebook:
+        tag = Tag.query.filter_by(name=tag_name).first()
+        if tag and tag in ebook.tags:
+            ebook.tags.remove(tag)
+            db.session.commit()
+            return jsonify({"message": "Tag deleted successfully"}), 200
+        else:
+            return jsonify({"error": "Tag not found"}), 404
+    else:
+        return jsonify({"error": "Ebook not found"}), 404
+
+
 # 获取所有电子书列表
 @app.route('/books', methods=['GET'])
 def get_books():
