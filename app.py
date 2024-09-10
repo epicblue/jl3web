@@ -1,7 +1,13 @@
+#
+# 作者：epicblue + 通义灵码
+# 日期：2024.9.10
+
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_sqlalchemy import SQLAlchemy
 import os
 from werkzeug.utils import secure_filename
+import logging
+from flask_script import Manager
 
 app = Flask(__name__)
 
@@ -25,7 +31,7 @@ class Ebook(db.Model):
     title = db.Column(db.String(80), nullable=False)
     author = db.Column(db.String(120))
     file_path = db.Column(db.String(200))
-    tags = db.relationship('Tag', secondary=ebook_tags, backref=db.backref('ebooks', lazy='dynamic'))
+    tags = db.relationship('Tag', secondary=ebook_tags, backref='ebooks')
 
     def __repr__(self):
         return f'<Ebook {self.title}>'
@@ -33,7 +39,7 @@ class Ebook(db.Model):
 # 标签模型
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
+    name = db.Column(db.String(50), unique=True, nullable=False)  # 添加 unique=True 约束
 
     def __repr__(self):
         return f'<Tag {self.name}>'
@@ -73,6 +79,27 @@ def upload_ebook():
         db.session.commit()
         return jsonify({"message": "Ebook uploaded successfully"}), 201
 
+# 获取指定标签下的所有电子书
+@app.route('/books/tags/<string:tag_name>', methods=['GET'])
+def get_books_by_tag(tag_name):
+    tag = Tag.query.filter_by(name=tag_name).first()
+    if not tag:
+        return jsonify({'message': 'Tag not found'}), 404
+    
+    # 获取与该标签关联的所有电子书
+    ebooks = tag.ebooks
+    ebooks_data = [
+        {
+            'id': ebook.id,
+            'title': ebook.title,
+            'author': ebook.author,
+            'tags': [tag.name for tag in ebook.tags]
+        }
+        for ebook in ebooks
+    ]
+    
+    return jsonify(ebooks_data), 200
+
 # 删除标签
 @app.route('/tags/<int:tag_id>', methods=['DELETE'])
 def delete_tag(tag_id):
@@ -88,6 +115,8 @@ def delete_tag(tag_id):
         return jsonify({"message": "Tag deleted successfully"}), 200
     else:
         return jsonify({"error": "Tag not found"}), 404
+
+# 给电子书添加标签
 @app.route('/tags/<int:ebook_id>', methods=['POST'])
 def add_tag(ebook_id):
     data = request.get_json()
@@ -109,7 +138,7 @@ def add_tag(ebook_id):
     else:
         return jsonify({'message': 'Tag already exists for this ebook'}), 400
 
-
+# 删除电子书的标签
 @app.route('/tags/<int:ebook_id>/<string:tag_name>', methods=['DELETE'])
 def delete_ebook_tag(ebook_id, tag_name):
     ebook = Ebook.query.get(ebook_id)
@@ -123,7 +152,6 @@ def delete_ebook_tag(ebook_id, tag_name):
             return jsonify({"error": "Tag not found"}), 404
     else:
         return jsonify({"error": "Ebook not found"}), 404
-
 
 # 获取所有电子书列表
 @app.route('/books', methods=['GET'])
@@ -152,4 +180,5 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    print('app running')
+    app.run()

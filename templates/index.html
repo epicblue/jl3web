@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>电子书上传下载</title>
+    <title>电子书上传 epicblue</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <style>
@@ -38,6 +38,9 @@
         .tag-item:hover {
             background-color: #e1e1e1;
         }
+        .right-aligned {
+            float: right;
+        }
         .add-tag-button {
             padding: 5px 10px;
             margin-left: 5px;
@@ -62,8 +65,7 @@
     </style>
 </head>
 <body>
-
-<h1>电子书上传下载</h1>
+    <h1>电子书上传</h1>
 
 <!-- 上传表单 -->
 <form id="upload-form">
@@ -113,57 +115,57 @@
         .catch(error => console.error('Error:', error));
     });
 
-    // 加载书籍列表
-    function loadBooks() {
-        fetch('/books')
-        .then(response => response.json())
-        .then(data => {
-            const booksList = document.getElementById('books');
-            booksList.innerHTML = ''; // 清空列表
-            
-            data.forEach(book => {
-                const li = document.createElement('li');
-                li.className = 'book-item';
-                li.textContent = `${book.title} - ${book.author}`;
 
-                // 添加标签列表
-                const tagsContainer = document.createElement('span');
-                tagsContainer.className = 'tags-container';
+// 加载书籍列表
+function loadBooks() {
+    fetch('/books')
+    .then(response => response.json())
+    .then(data => {
+        const booksList = document.getElementById('books');
+        booksList.innerHTML = ''; // 清空列表
 
-                book.tags.forEach(tag => {
-                    const tagItem = document.createElement('span');
-                    tagItem.className = 'tag-item';
-                    tagItem.textContent = tag + ' ';
-                    tagItem.addEventListener('click', function() {
-                        deleteTag(book.id, tag); // 调用删除标签的函数
-                    });
-                    tagsContainer.appendChild(tagItem);
+        data.forEach(book => {
+            const li = document.createElement('li');
+            li.className = 'book-item';
+            li.textContent = `${book.title} - ${book.author}`;
+
+            // 添加标签列表
+            const tagsContainer = document.createElement('span');
+            tagsContainer.className = 'tags-container';
+
+            book.tags.forEach(tag => {
+                const tagItem = document.createElement('span');
+                tagItem.className = 'tag-item';
+                tagItem.textContent = tag + ' ';
+                tagItem.addEventListener('click', function() {
+                    showBooksByTag(tag); // 调用显示对应电子书的函数
                 });
-
-                const addTagButton = document.createElement('button');
-                addTagButton.className = 'add-tag-button';
-                addTagButton.textContent = '添加标签';
-                addTagButton.addEventListener('click', function() {
-                    showAddTagInput(book.id);
-                });
-
-                const downloadButton = document.createElement('button');
-                downloadButton.textContent = '下载';
-                downloadButton.onclick = () => {
-                    window.location.href = `/download/${book.id}`;
-                };
-
-                li.appendChild(tagsContainer);
-                li.appendChild(document.createTextNode(' ')); // 添加空格
-                li.appendChild(addTagButton);
-                li.appendChild(document.createTextNode(' ')); // 添加空格
-                li.appendChild(downloadButton);
-                booksList.appendChild(li);
+                tagsContainer.appendChild(tagItem);
             });
-        })
-        .catch(error => console.error('Error:', error));
-    }
 
+            const addTagButton = document.createElement('button');
+            addTagButton.className = 'add-tag-button';
+            addTagButton.textContent = '添加标签';
+            addTagButton.addEventListener('click', function() {
+                showAddTagInput(book.id);
+            });
+
+            const downloadButton = document.createElement('button');
+            downloadButton.textContent = '下载';
+            downloadButton.onclick = () => {
+                window.location.href = `/download/${book.id}`;
+            };
+
+            li.appendChild(tagsContainer);
+            li.appendChild(document.createTextNode(' ')); // 添加空格
+            li.appendChild(addTagButton);
+            li.appendChild(document.createTextNode(' ')); // 添加空格
+            li.appendChild(downloadButton);
+            booksList.appendChild(li);
+        });
+    })
+    .catch(error => console.error('Error:', error));
+}
     // 删除标签的函数
     function deleteTag(ebookId, tagName) {
         fetch(`/tags/${ebookId}/${tagName}`, {
@@ -221,6 +223,56 @@
         .catch(error => console.error('Error:', error));
     }
 
+// 显示指定标签对应的电子书
+function showBooksByTag(tagName) {
+        fetch(`/books/tags/${tagName}`)
+        .then(response => response.json())
+        .then(data => {
+            const booksList = document.getElementById('books');
+            booksList.innerHTML = ''; // 清空列表
+
+            data.forEach(book => {
+                const li = document.createElement('li');
+                li.className = 'book-item';
+                li.textContent = `${book.title} - ${book.author}`;
+
+                // 添加标签列表
+                const tagsContainer = document.createElement('span');
+                tagsContainer.className = 'tags-container';
+
+                book.tags.forEach(tag => {
+                    const tagItem = document.createElement('span');
+                    tagItem.className = 'tag-item';
+                    tagItem.textContent = tag + ' ';
+                    tagItem.addEventListener('click', function() {
+                        showBooksByTag(tag); // 调用显示对应电子书的函数
+                    });
+                    tagsContainer.appendChild(tagItem);
+                });
+
+                const addTagButton = document.createElement('button');
+                addTagButton.className = 'add-tag-button';
+                addTagButton.textContent = '添加标签';
+                addTagButton.addEventListener('click', function() {
+                    showAddTagInput(book.id);
+                });
+
+                const downloadButton = document.createElement('button');
+                downloadButton.textContent = '下载';
+                downloadButton.onclick = () => {
+                    window.location.href = `/download/${book.id}`;
+                };
+
+                li.appendChild(tagsContainer);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
+                li.appendChild(addTagButton);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
+                li.appendChild(downloadButton);
+                booksList.appendChild(li);
+            });
+        })
+    .catch(error => console.error('Error:', error));
+}
     // 初始化加载书籍列表
     loadBooks();
 
@@ -236,6 +288,6 @@
     document.body.appendChild(addTagInput);
     addTagInput.style.display = 'none';
 </script>
-
+<p>copyright © 2024 epicblue</p>
 </body>
 </html>
