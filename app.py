@@ -1,5 +1,5 @@
 #
-# 作者：epicblue + 通义灵码
+# 作者：epicblue
 # 日期：2024.9.10
 
 from flask import Flask, request, jsonify, send_from_directory, render_template
@@ -167,6 +167,22 @@ def get_books():
         }
         books_data.append(book_data)
     return jsonify(books_data)
+
+# 编辑电子书名称
+@app.route('/books/<int:ebook_id>/edit_title', methods=['PUT'])
+def edit_ebook_title(ebook_id):
+    ebook = Ebook.query.get(ebook_id)
+    if not ebook:
+        return jsonify({"error": "Ebook not found"}), 404
+    
+    new_title = request.form.get('title')
+    if not new_title:
+        return jsonify({"error": "New title is required"}), 400
+    
+    ebook.title = new_title
+    db.session.commit()
+    
+    return jsonify({"message": "Title updated successfully"}), 200
 
 # 下载电子书
 @app.route('/download/<int:ebook_id>')

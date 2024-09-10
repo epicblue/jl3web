@@ -72,4 +72,6 @@ java/testres/
 csharp/**/obj/
 csharp/**/bin/
 uploads/
+__pycache__/
+.vscode/
 ebooks.db

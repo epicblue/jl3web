@@ -9,24 +9,74 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
         }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
         form {
             margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
         input[type="text"], input[type="file"] {
-            padding: 5px;
-            margin-right: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
+
         button {
-            padding: 5px 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
         #download-list {
             margin-top: 20px;
         }
+
         .book-item {
             margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
+
         .tag-item {
             display: inline-block;
             background-color: #f1f1f1;
@@ -35,16 +85,20 @@
             border-radius: 5px;
             cursor: pointer;
         }
+
         .tag-item:hover {
             background-color: #e1e1e1;
         }
+
         .right-aligned {
             float: right;
         }
+
         .add-tag-button {
             padding: 5px 10px;
             margin-left: 5px;
         }
+
         .add-tag-input {
             display: none;
             position: absolute;
@@ -57,10 +111,18 @@
             background-color: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
         }
+
         .add-tag-input input[type="text"] {
             width: 300px;
             padding: 5px;
             margin-right: 10px;
+        }
+
+        .copyright {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -116,56 +178,56 @@
     });
 
 
-// 加载书籍列表
-function loadBooks() {
-    fetch('/books')
-    .then(response => response.json())
-    .then(data => {
-        const booksList = document.getElementById('books');
-        booksList.innerHTML = ''; // 清空列表
+    // 加载书籍列表
+    function loadBooks() {
+        fetch('/books')
+        .then(response => response.json())
+        .then(data => {
+            const booksList = document.getElementById('books');
+            booksList.innerHTML = ''; // 清空列表
 
-        data.forEach(book => {
-            const li = document.createElement('li');
-            li.className = 'book-item';
-            li.textContent = `${book.title} - ${book.author}`;
+            data.forEach(book => {
+                const li = document.createElement('li');
+                li.className = 'book-item';
+                li.textContent = `${book.title} - ${book.author}`;
 
-            // 添加标签列表
-            const tagsContainer = document.createElement('span');
-            tagsContainer.className = 'tags-container';
+                // 添加标签列表
+                const tagsContainer = document.createElement('span');
+                tagsContainer.className = 'tags-container';
 
-            book.tags.forEach(tag => {
-                const tagItem = document.createElement('span');
-                tagItem.className = 'tag-item';
-                tagItem.textContent = tag + ' ';
-                tagItem.addEventListener('click', function() {
-                    showBooksByTag(tag); // 调用显示对应电子书的函数
+                book.tags.forEach(tag => {
+                    const tagItem = document.createElement('span');
+                    tagItem.className = 'tag-item';
+                    tagItem.textContent = tag + ' ';
+                    tagItem.addEventListener('click', function() {
+                        showBooksByTag(tag); // 调用显示对应电子书的函数
+                    });
+                    tagsContainer.appendChild(tagItem);
                 });
-                tagsContainer.appendChild(tagItem);
+
+                const addTagButton = document.createElement('button');
+                addTagButton.className = 'add-tag-button';
+                addTagButton.textContent = '添加标签';
+                addTagButton.addEventListener('click', function() {
+                    showAddTagInput(book.id);
+                });
+
+                const downloadButton = document.createElement('button');
+                downloadButton.textContent = '下载';
+                downloadButton.onclick = () => {
+                    window.location.href = `/download/${book.id}`;
+                };
+
+                li.appendChild(tagsContainer);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
+                li.appendChild(addTagButton);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
+                li.appendChild(downloadButton);
+                booksList.appendChild(li);
             });
-
-            const addTagButton = document.createElement('button');
-            addTagButton.className = 'add-tag-button';
-            addTagButton.textContent = '添加标签';
-            addTagButton.addEventListener('click', function() {
-                showAddTagInput(book.id);
-            });
-
-            const downloadButton = document.createElement('button');
-            downloadButton.textContent = '下载';
-            downloadButton.onclick = () => {
-                window.location.href = `/download/${book.id}`;
-            };
-
-            li.appendChild(tagsContainer);
-            li.appendChild(document.createTextNode(' ')); // 添加空格
-            li.appendChild(addTagButton);
-            li.appendChild(document.createTextNode(' ')); // 添加空格
-            li.appendChild(downloadButton);
-            booksList.appendChild(li);
-        });
-    })
-    .catch(error => console.error('Error:', error));
-}
+        })
+        .catch(error => console.error('Error:', error));
+    }
     // 删除标签的函数
     function deleteTag(ebookId, tagName) {
         fetch(`/tags/${ebookId}/${tagName}`, {
@@ -288,6 +350,6 @@ function showBooksByTag(tagName) {
     document.body.appendChild(addTagInput);
     addTagInput.style.display = 'none';
 </script>
-<p>copyright © 2024 epicblue</p>
+<p class="copyright">copyright © 2024 epicblue</p>
 </body>
 </html>
