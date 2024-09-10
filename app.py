@@ -56,7 +56,19 @@ def upload_ebook():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
     if file:
-        filename = secure_filename(file.filename)
+        original_filename = secure_filename(file.filename)
+        base, ext = os.path.splitext(original_filename)
+        
+        # 构造初始文件名
+        filename = original_filename
+
+        # 检查是否有同名文件
+        i = 1
+        while os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
+            filename = f"{base}_{i}{ext}"
+            i += 1
+
+        # 保存文件
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         
         title = request.form.get('title')
@@ -77,8 +89,7 @@ def upload_ebook():
         new_ebook = Ebook(title=title, author=author, file_path=filename, tags=tags)
         db.session.add(new_ebook)
         db.session.commit()
-        return jsonify({"message": "Ebook uploaded successfully"}), 201
-
+        return jsonify({"message": "Ebook uploaded successfully", "filename": filename}), 201
 # 获取指定标签下的所有电子书
 @app.route('/books/tags/<string:tag_name>', methods=['GET'])
 def get_books_by_tag(tag_name):
