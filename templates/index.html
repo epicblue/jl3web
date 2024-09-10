@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>电子书上传 epicblue</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.min.css') }}" />
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jstree.min.js') }}"></script>
+   <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -51,8 +52,8 @@
 
         button {
             padding: 10px 20px;
-            background-color: #007bff;
-            color: #fff;
+            background-color: #007bff; /* 蓝色背景 */
+            color: #fff; /* 白色文字 */
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -142,6 +143,7 @@
     <button type="submit">上传</button>
 </form>
 
+<div id="category-tree"></div>
 <!-- 下载列表 -->
 <div id="download-list">
     <h2>已上传电子书</h2>
@@ -349,6 +351,88 @@ function showBooksByTag(tagName) {
     `;
     document.body.appendChild(addTagInput);
     addTagInput.style.display = 'none';
+
+// 初始化树形界面
+function initCategoryTree() {
+    // 获取树形界面的容器
+    const treeContainer = $('#category-tree');
+
+    // 从服务器获取分类数据
+    fetch('/categories')
+    .then(response => response.json())
+    .then(data => {
+        // 构建树形结构数据
+        const treeData = buildTreeData(data);
+
+        // 初始化 jstree
+        treeContainer.jstree({
+            'core' : {
+                'data' : treeData,
+                'themes': {
+                    'responsive': true,
+                    'stripes': true
+                }
+            },
+            'types' : {
+                'default' : {
+                    'icon' : 'fa fa-folder jstree-icon'
+                },
+                'file' : {
+                    'icon' : 'fa fa-file jstree-icon'
+                }
+            },
+            'plugins' : ['types', 'contextmenu'],
+            'contextmenu' : {
+                'items' : function (node) {
+                    return { "tags" : { "separator_before" : false, "separator_after" : false, "label" : "标签", "action" : function (node) {
+                        alert(`选中的节点: ${node.text}, 标签: ${node.tags.join(", ")}`);
+                    }}}
+                }
+            }
+        });
+
+        // 绑定点击事件处理
+        treeContainer.on('changed.jstree', function (e, data) {
+            const selectedNode = data.instance.get_selected(true)[0];
+            if (selectedNode) {
+                alert(`选中的节点: ${selectedNode.text}`);
+                // 这里可以添加更多逻辑，例如根据选中的节点显示相关信息
+            }
+        });
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// 构建树形结构数据
+function buildTreeData(categories) {
+    const treeData = [];
+
+    categories.forEach(category => {
+        const node = {
+            'id'   : category.id,
+            'parent': '#',
+            'text' : category.name,
+            'type' : 'default',
+            'children': [],
+            'tags': category.tags.map(tag => ({
+                'id': tag.id,
+                'text': tag.name,
+                'type': 'file'  // 假设标签是文件类型
+            }))
+        };
+
+        if (category.subCategories && category.subCategories.length > 0) {
+            node.children = buildTreeData(category.subCategories);
+        }
+
+        treeData.push(node);
+    });
+
+    return treeData;
+}
+
+// 初始化树形界面
+initCategoryTree();
 </script>
 <p class="copyright">copyright © 2024 epicblue</p>
 </body>

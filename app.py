@@ -20,7 +20,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 db = SQLAlchemy(app)
 
 # 关联表
-ebook_tags = db.Table('ebook_tags',
+ebook_tag = db.Table(
+    'ebook_tag',
     db.Column('ebook_id', db.Integer, db.ForeignKey('ebook.id'), primary_key=True),
     db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
 )
@@ -28,10 +29,10 @@ ebook_tags = db.Table('ebook_tags',
 # 电子书模型
 class Ebook(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(80), nullable=False)
-    author = db.Column(db.String(120))
-    file_path = db.Column(db.String(200))
-    tags = db.relationship('Tag', secondary=ebook_tags, backref='ebooks')
+    title = db.Column(db.String(100), nullable=False)
+    author = db.Column(db.String(50), nullable=False)
+    file_path = db.Column(db.String(200), nullable=False)
+    tags = db.relationship("Tag", secondary=ebook_tag, back_populates="ebook")
 
     def __repr__(self):
         return f'<Ebook {self.title}>'
@@ -39,11 +40,26 @@ class Ebook(db.Model):
 # 标签模型
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)  # 添加 unique=True 约束
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+    category = db.relationship("Category", back_populates="tags")
+    ebook = db.relationship("Ebook", secondary=ebook_tag, back_populates="tags")
 
     def __repr__(self):
         return f'<Tag {self.name}>'
 
+# 定义Category模型
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    subcategories = db.relationship("Category", back_populates="parent", remote_side=[id])
+    parent_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    parent = db.relationship("Category", back_populates="subcategories")
+    tags = db.relationship("Tag", back_populates="category")
+
+    def __repr__(self):
+        return f'<Category {self.name}>'
+    
 # 初始化数据库
 db.create_all()
 
@@ -70,7 +86,7 @@ def upload_ebook():
 
         # 保存文件
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        
+
         title = request.form.get('title')
         author = request.form.get('author')
         tags_str = request.form.get('tags', '')  # 获取标签字符串
@@ -82,7 +98,9 @@ def upload_ebook():
             if tag_name:
                 tag = Tag.query.filter_by(name=tag_name).first()
                 if tag is None:
-                    tag = Tag(name=tag_name)
+                    # 获取根节点的 ID
+                    root_category = Category.query.filter_by(name='root').first()
+                    tag = Tag(name=tag_name, category_id=root_category.id)
                     db.session.add(tag)
                 tags.append(tag)
 
@@ -126,6 +144,123 @@ def delete_tag(tag_id):
         return jsonify({"message": "Tag deleted successfully"}), 200
     else:
         return jsonify({"error": "Tag not found"}), 404
+
+@app.route('/categories', methods=['POST'])
+def create_category():
+    data = request.get_json()
+    name = data.get('name')
+    parent_id = data.get('parent_id')
+
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+
+    category = Category(name=name)
+    if parent_id:
+        parent = Category.query.get(parent_id)
+        if not parent:
+            return jsonify({"error": "Parent category not found"}), 404
+        parent.subcategories.append(category)
+
+    db.session.add(category)
+    db.session.commit()
+    return jsonify({"message": "Category created successfully", "id": category.id}), 201
+
+@app.route('/categories/<int:category_id>', methods=['GET'])
+def get_category(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({"error": "Category not found"}), 404
+
+    category_data = {
+        'id': category.id,
+        'name': category.name,
+        'subcategories': [
+            {'id': sub.id, 'name': sub.name}
+            for sub in category.subcategories
+        ],
+        'tags': [
+            {'id': tag.id, 'name': tag.name}
+            for tag in category.tags
+        ]
+    }
+
+    return jsonify(category_data), 200
+
+@app.route('/categories', methods=['GET'])
+def get_categories():
+    categories = Category.query.all()
+    
+    # 将 Category 对象转换成字典形式
+    categories_data = []
+    for category in categories:
+        subcategories = category.subcategories if category.subcategories is not None else []
+        
+        category_dict = {
+            'id': category.id,
+            'name': category.name,
+            'subcategories': [
+                {'id': sub.id, 'name': sub.name}
+                for sub in subcategories
+            ],
+            'tags': [
+                {'id': tag.id, 'name': tag.name}
+                for tag in category.tags
+            ]
+        }
+        categories_data.append(category_dict)
+
+    return jsonify(categories_data)
+
+
+@app.route('/categories/<int:category_id>', methods=['PUT'])
+def update_category(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({"error": "Category not found"}), 404
+
+    data = request.get_json()
+    name = data.get('name')
+    parent_id = data.get('parent_id')
+
+    if name:
+        category.name = name
+
+    if parent_id:
+        parent = Category.query.get(parent_id)
+        if not parent:
+            return jsonify({"error": "Parent category not found"}), 404
+        if category.parent != parent:
+            if category.parent:
+                category.parent.subcategories.remove(category)
+            parent.subcategories.append(category)
+
+    db.session.commit()
+    return jsonify({"message": "Category updated successfully"}), 200
+
+@app.route('/categories/<int:category_id>', methods=['DELETE'])
+def delete_category(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({"error": "Category not found"}), 404
+
+    # 删除所有子分类和标签
+    for subcategory in category.subcategories:
+        db.session.delete(subcategory)
+    for tag in category.tags:
+        db.session.delete(tag)
+
+    db.session.delete(category)
+    db.session.commit()
+    return jsonify({"message": "Category deleted successfully"}), 200
+
+def ensure_root_category_exists():
+    root_category = Category.query.filter_by(name='root').first()
+    if not root_category:
+        root_category = Category(name='root')
+        db.session.add(root_category)
+        db.session.commit()
+
+ensure_root_category_exists()
 
 # 给电子书添加标签
 @app.route('/tags/<int:ebook_id>', methods=['POST'])
