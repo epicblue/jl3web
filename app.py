@@ -163,6 +163,7 @@ def add_keyword(parent_id):
 
     return jsonify({"message": "Keyword added successfully"}), 200
 
+
 @app.route('/categories', methods=['POST'])
 def create_category():
     data = request.get_json()
@@ -345,6 +346,22 @@ def delete_ebook_tag(ebook_id, tag_name):
     else:
         return jsonify({"error": "Ebook not found"}), 404
 
+@app.route('/tags/<int:keyword_id>', methods=['PUT'])
+def update_keyword_name(keyword_id):
+    data = request.get_json()
+    new_name = data.get('name')
+
+    if not new_name:
+        return jsonify({"error": "New name is required"}), 400
+
+    keyword = Tag.query.get(keyword_id)
+    if not keyword:
+        return jsonify({"error": "Keyword not found"}), 404
+
+    keyword.name = new_name
+    db.session.commit()
+
+    return jsonify({"message": "Keyword name updated successfully"}), 200
 # 获取所有电子书列表
 @app.route('/books', methods=['GET'])
 def get_books():
