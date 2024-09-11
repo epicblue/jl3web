@@ -195,9 +195,13 @@ def get_categories():
     for category in categories:
         subcategories = category.subcategories if category.subcategories is not None else []
         
+        if isinstance(subcategories, Category):
+            subcategories = Category.query.filter_by(parent_id=category.id).all()
+        
         category_dict = {
             'id': category.id,
             'name': category.name,
+            'parent':category.parent_id if category.parent_id is not None else '#',
             'subcategories': [
                 {'id': sub.id, 'name': sub.name}
                 for sub in subcategories
@@ -210,6 +214,27 @@ def get_categories():
         categories_data.append(category_dict)
 
     return jsonify(categories_data)
+
+# 创建子分类
+@app.route('/categories/<int:parent_id>/children', methods=['POST'])
+def create_subcategory(parent_id):
+    data = request.get_json()
+    name = data.get('name')
+
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+
+    parent = Category.query.get(parent_id)
+    if not parent:
+        return jsonify({"error": "Parent category not found"}), 404
+
+    try:
+        subcategory = Category(name=name, parent_id=parent_id)
+        db.session.add(subcategory)
+        db.session.commit()
+    except:
+        return jsonify({"error": "Failed to create subcategory"}), 500
+    return jsonify({"message": "Subcategory created successfully", "id": subcategory.id}), 201
 
 
 @app.route('/categories/<int:category_id>', methods=['PUT'])
@@ -276,6 +301,7 @@ def add_tag(ebook_id):
     if not tag:
         root_category = Category.query.filter_by(name='root').first()
         tag = Tag(name=tag_name, category_id=root_category.id)
+
         db.session.add(tag)
 
     if tag not in ebook.tags:
