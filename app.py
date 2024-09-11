@@ -145,6 +145,24 @@ def delete_tag(tag_id):
     else:
         return jsonify({"error": "Tag not found"}), 404
 
+@app.route('/categories/<int:parent_id>/keywords', methods=['POST'])
+def add_keyword(parent_id):
+    data = request.get_json()
+    keyword = data.get('keyword')
+
+    if not keyword:
+        return jsonify({"error": "Keyword is required"}), 400
+
+    parent = Category.query.get(parent_id)
+    if not parent:
+        return jsonify({"error": "Parent category not found"}), 404
+
+    keyword_tag = Tag(name=keyword,category_id=parent_id)
+    parent.tags.append(keyword_tag)
+    db.session.commit()
+
+    return jsonify({"message": "Keyword added successfully"}), 200
+
 @app.route('/categories', methods=['POST'])
 def create_category():
     data = request.get_json()

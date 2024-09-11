@@ -174,6 +174,12 @@
     <button class="add-child-category-confirm">确认</button>
 </div>
 
+<div id="add-keyword-input" class="add-tag-input" style="display: none;">
+    <input type="text" placeholder="输入新关键字">
+    <button class="add-keyword-cancel">取消</button>
+    <button class="add-keyword-confirm">确认</button>
+</div>
+
 <script>
     // 上传表单提交事件
     document.getElementById('upload-form').addEventListener('submit', function(event) {
@@ -426,6 +432,12 @@ function initCategoryTree() {
                             "action": function(obj) {
                                 showAddChildCategoryDialog(node.id);
                             }
+                        },
+                        "add_keyword": {
+                            "label": "添加关键字",
+                            "action": function(obj) {
+                                showAddKeywordDialog(node.id);
+                            }
                         }
                     };
                     return items;
@@ -447,6 +459,52 @@ function initCategoryTree() {
                 }
             }
         });
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function showAddKeywordDialog(parentId) {
+    const addKeywordInput = document.getElementById('add-keyword-input');
+    addKeywordInput.style.display = 'block';
+    addKeywordInput.querySelector('input[type="text"]').value = '';
+    addKeywordInput.querySelector('input[type="text"]').focus();
+
+    addKeywordInput.querySelector('.add-keyword-cancel').addEventListener('click', function() {
+        addKeywordInput.style.display = 'none';
+    });
+
+    const confirmButton = addKeywordInput.querySelector('.add-keyword-confirm');
+
+    var a = function() {
+        const newKeyword = addKeywordInput.querySelector('input[type="text"]').value.trim();
+        if (newKeyword) {
+            addKeyword(parentId, newKeyword);
+            addKeywordInput.style.display = 'none';
+        } else {
+            alert('请输入有效的关键字');
+        }
+        confirmButton.removeEventListener('click', a);
+    };
+
+    confirmButton.addEventListener('click', a);
+}
+
+function addKeyword(parentId, keyword) {
+    fetch(`/categories/${parentId}/keywords`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ keyword: keyword })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message === 'Keyword added successfully') {
+            alert('关键字添加成功');
+            initCategoryTree(); // 刷新树形界面
+        } else {
+            alert('添加关键字失败');
+        }
     })
     .catch(error => console.error('Error:', error));
 }
