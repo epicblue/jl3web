@@ -280,6 +280,7 @@ def update_category(category_id):
     db.session.commit()
     return jsonify({"message": "Category updated successfully"}), 200
 
+# 删除子分类
 @app.route('/categories/<int:category_id>', methods=['DELETE'])
 def delete_category(category_id):
     category = Category.query.get(category_id)

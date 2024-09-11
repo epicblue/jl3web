@@ -646,6 +646,7 @@
                 'parent': category.parent,
                 'text' : category.name,
                 'type' : 'default',
+                "icon" : "{{ url_for('static', filename='img/category-icon.png') }}"
             };
 
             if (category.subCategories && category.subCategories.length > 0) {
@@ -661,6 +662,7 @@
                     'text': tag.name,
                     'type': 'file', // 设置标签节点的类型为'file'或其他自定义类型
                     'istag': 'yes',
+                    "icon" : "{{ url_for('static', filename='img/keyword-icon.gif') }}"
                      };
                 treeData.push(tagNode);
             });
