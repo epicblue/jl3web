@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.min.css') }}" />
     <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jstree.min.js') }}"></script>
-   <style>
+    <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -16,12 +16,26 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px; /* 增加宽度以适应并排布局 */
             margin: 0 auto;
             padding: 20px;
             background-color: #fff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 5px;
+        }
+
+        .row {
+            display: flex; /* 使用flex布局 */
+            justify-content: space-between; /* 分隔两个部分 */
+        }
+
+        #category-tree {
+            flex: 1; /* 自动分配空间 */
+            padding-right: 20px; /* 右侧间距 */
+        }
+
+        #download-list {
+            flex: 2; /* 自动分配两倍的空间 */
         }
 
         h1 {
@@ -32,20 +46,19 @@
         form {
             margin-bottom: 20px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            align-items: center; /* 水平居中对齐 */
         }
 
         label {
-            display: block;
-            margin-bottom: 5px;
+            display: inline-block;
+            margin-right: 10px;
             color: #333;
         }
 
         input[type="text"], input[type="file"] {
             padding: 10px;
-            margin-bottom: 10px;
-            width: 100%;
+            margin-right: 10px;
+            width: 200px; /* 固定宽度 */
             border: 1px solid #ccc;
             border-radius: 5px;
         }
@@ -128,6 +141,7 @@
     </style>
 </head>
 <body>
+    <div class="container">
     <h1>电子书上传</h1>
 
 <!-- 上传表单 -->
@@ -143,11 +157,12 @@
     <button type="submit">上传</button>
 </form>
 
-<div id="category-tree"></div>
-<!-- 下载列表 -->
-<div id="download-list">
-    <h2>已上传电子书</h2>
-    <ul id="books"></ul>
+<div class="row">
+    <div id="category-tree"></div>
+    <div id="download-list">
+        <ul id="books"></ul>
+    </div>
+</div>
 </div>
 
 <script>
