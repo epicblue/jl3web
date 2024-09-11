@@ -463,9 +463,8 @@ function showAddChildCategoryDialog(parentId) {
     });
 
     const confirmButton = addChildCategoryInput.querySelector('.add-child-category-confirm');
-    confirmButton.removeEventListener('click', confirmButton.onclick);
-
-    confirmButton.addEventListener('click', function() {
+    
+    var a = function() {
         const newCategoryName = addChildCategoryInput.querySelector('input[type="text"]').value.trim();
         if (newCategoryName) {
             addChildCategory(parentId, newCategoryName);
@@ -473,7 +472,10 @@ function showAddChildCategoryDialog(parentId) {
         } else {
             alert('请输入有效的子分类名称');
         }
-    });
+        confirmButton.removeEventListener('click', a);
+    };
+
+    confirmButton.addEventListener('click', a);
 }
 
 // 添加子分类的函数
