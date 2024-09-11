@@ -352,87 +352,101 @@ function showBooksByTag(tagName) {
     document.body.appendChild(addTagInput);
     addTagInput.style.display = 'none';
 
-// 初始化树形界面
-function initCategoryTree() {
-    // 获取树形界面的容器
-    const treeContainer = $('#category-tree');
+    // 初始化树形界面
+    function initCategoryTree() {
+        // 获取树形界面的容器
+        const treeContainer = $('#category-tree');
 
-    // 从服务器获取分类数据
-    fetch('/categories')
-    .then(response => response.json())
-    .then(data => {
-        // 构建树形结构数据
-        const treeData = buildTreeData(data);
+        // 从服务器获取分类数据
+        fetch('/categories')
+        .then(response => response.json())
+        .then(data => {
+            // 构建树形结构数据
+            const treeData = buildTreeData(data);
 
-        // 初始化 jstree
-        treeContainer.jstree({
-            'core' : {
-                'data' : treeData,
-                'themes': {
-                    'responsive': true,
-                    'stripes': true
-                }
-            },
-            'types' : {
-                'default' : {
-                    'icon' : 'fa fa-folder jstree-icon'
+            // 初始化 jstree
+            treeContainer.jstree({
+                'core' : {
+                    'data' : treeData,
+                    'themes': {
+                        'responsive': true,
+                        'stripes': true
+                    }
                 },
-                'file' : {
-                    'icon' : 'fa fa-file jstree-icon'
+                'types' : {
+                    'default' : {
+                        'icon' : 'fa fa-folder jstree-icon'
+                    },
+                    'file' : {
+                        'icon' : 'fa fa-file jstree-icon'
+                    }
+                },
+                'plugins' : ['types']
+            });
+        // 展开所有节点
+        treeContainer.jstree('open_all');
+            // 绑定点击事件处理
+            treeContainer.on('changed.jstree', function (e, data) {
+                const selectedNode = data.instance.get_selected(true)[0];
+                if (selectedNode) {
+                    //alert(`选中的节点: ${selectedNode.text}`);
+                    if(selectedNode.children){
+                        showBooksByTag(selectedNode.text);
+                    }
+                    // 这里可以添加更多逻辑，例如根据选中的节点显示相关信息
                 }
-            },
-            'plugins' : ['types', 'contextmenu'],
-            'contextmenu' : {
-                'items' : function (node) {
-                    return { "tags" : { "separator_before" : false, "separator_after" : false, "label" : "标签", "action" : function (node) {
-                        alert(`选中的节点: ${node.text}, 标签: ${node.tags.join(", ")}`);
-                    }}}
-                }
-            }
-        });
+            });
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
-        // 绑定点击事件处理
-        treeContainer.on('changed.jstree', function (e, data) {
-            const selectedNode = data.instance.get_selected(true)[0];
-            if (selectedNode) {
-                alert(`选中的节点: ${selectedNode.text}`);
-                // 这里可以添加更多逻辑，例如根据选中的节点显示相关信息
-            }
-        });
-    })
-    .catch(error => console.error('Error:', error));
+    function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0,
+            v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 }
+    // 构建树形结构数据
+    function buildTreeData(categories) {
+        const treeData = [];
 
-// 构建树形结构数据
-function buildTreeData(categories) {
-    const treeData = [];
+        categories.forEach(category => {
+            const node = {
+                'id'   : category.id,
+                'parent': '#',
+                'text' : category.name,
+                'type' : 'default',
+            };
 
-    categories.forEach(category => {
-        const node = {
-            'id'   : category.id,
-            'parent': '#',
-            'text' : category.name,
-            'type' : 'default',
-            'children': [],
-            'tags': category.tags.map(tag => ({
-                'id': tag.id,
-                'text': tag.name,
-                'type': 'file'  // 假设标签是文件类型
-            }))
-        };
+            if (category.subCategories && category.subCategories.length > 0) {
+                buildTreeData(category.subCategories).forEach(cat=>treeData.push(cat));
+            }
 
-        if (category.subCategories && category.subCategories.length > 0) {
-            node.children = buildTreeData(category.subCategories);
+        // 添加分类的标签节点
+        if (category.tags && category.tags.length > 0) {
+            category.tags.forEach(tag => {
+                const tagNode = {
+                    'id': tag.id+1000, // 为了区分标签节点和分类节点，可以给标签节点的ID加上前缀
+                    'parent': category.id, // 设置标签节点的父节点为当前分类节点
+                    'text': tag.name,
+                    'type': 'file', // 设置标签节点的类型为'file'或其他自定义类型
+                    'children': [],
+                     };
+                // node.children.push(tagNode); // 将标签节点添加到分类节点的子节点列表中
+                treeData.push(tagNode);
+            });
         }
 
-        treeData.push(node);
+
+        treeData.push(node); // 将分类节点添加到树形结构数据中
     });
 
     return treeData;
 }
 
-// 初始化树形界面
-initCategoryTree();
+    // 初始化树形界面
+    initCategoryTree();
 </script>
 <p class="copyright">copyright © 2024 epicblue</p>
 </body>

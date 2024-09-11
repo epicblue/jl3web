@@ -32,7 +32,7 @@ class Ebook(db.Model):
     title = db.Column(db.String(100), nullable=False)
     author = db.Column(db.String(50), nullable=False)
     file_path = db.Column(db.String(200), nullable=False)
-    tags = db.relationship("Tag", secondary=ebook_tag, back_populates="ebook")
+    tags = db.relationship("Tag", secondary=ebook_tag, back_populates="ebooks")
 
     def __repr__(self):
         return f'<Ebook {self.title}>'
@@ -43,7 +43,7 @@ class Tag(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     category = db.relationship("Category", back_populates="tags")
-    ebook = db.relationship("Ebook", secondary=ebook_tag, back_populates="tags")
+    ebooks = db.relationship("Ebook", secondary=ebook_tag, back_populates="tags")
 
     def __repr__(self):
         return f'<Tag {self.name}>'
@@ -343,4 +343,4 @@ def index():
 
 if __name__ == '__main__':
     print('app running')
-    app.run()
+    app.run(debug=True)
