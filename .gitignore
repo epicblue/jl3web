@@ -74,4 +74,5 @@ csharp/**/bin/
 uploads/
 __pycache__/
 .vscode/
+.vs/
 ebooks.db
