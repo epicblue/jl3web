@@ -274,7 +274,8 @@ def add_tag(ebook_id):
 
     tag = Tag.query.filter_by(name=tag_name).first()
     if not tag:
-        tag = Tag(name=tag_name)
+        root_category = Category.query.filter_by(name='root').first()
+        tag = Tag(name=tag_name, category_id=root_category.id)
         db.session.add(tag)
 
     if tag not in ebook.tags:

@@ -32,10 +32,12 @@
         #category-tree {
             flex: 1; /* 自动分配空间 */
             padding-right: 20px; /* 右侧间距 */
+            margin-top: 20px; /* 设置相同的顶部外边距 */
         }
 
         #download-list {
             flex: 2; /* 自动分配两倍的空间 */
+            margin-top: 20px; /* 设置相同的顶部外边距 */
         }
 
         h1 {
@@ -262,24 +264,36 @@
         .catch(error => console.error('Error:', error));
     }
 
-    // 显示添加标签的输入框
-    function showAddTagInput(ebookId) {
-        const addTagInput = document.getElementById('add-tag-input');
-        addTagInput.style.display = 'block';
-        addTagInput.querySelector('input[type="text"]').value = '';
-        addTagInput.querySelector('.add-tag-cancel').addEventListener('click', function() {
+// 显示添加标签的输入框
+function showAddTagInput(ebookId) {
+    const addTagInput = document.getElementById('add-tag-input');
+    addTagInput.style.display = 'block';
+    addTagInput.querySelector('input[type="text"]').value = '';
+
+    // 设置焦点到文本框
+    addTagInput.querySelector('input[type="text"]').focus();
+
+    // 添加键盘事件监听器
+    addTagInput.querySelector('input[type="text"]').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') { // 检测是否按下了回车键
+            addTagInput.querySelector('.add-tag-confirm').click(); // 触发确认按钮的点击事件
+        }
+    });
+
+    addTagInput.querySelector('.add-tag-cancel').addEventListener('click', function() {
+        addTagInput.style.display = 'none';
+    });
+
+    addTagInput.querySelector('.add-tag-confirm').addEventListener('click', function() {
+        const newTag = addTagInput.querySelector('input[type="text"]').value.trim();
+        if (newTag) {
+            addTag(ebookId, newTag);
             addTagInput.style.display = 'none';
-        });
-        addTagInput.querySelector('.add-tag-confirm').addEventListener('click', function() {
-            const newTag = addTagInput.querySelector('input[type="text"]').value.trim();
-            if (newTag) {
-                addTag(ebookId, newTag);
-                addTagInput.style.display = 'none';
-            } else {
-                alert('请输入有效的标签');
-            }
-        });
-    }
+        } else {
+            alert('请输入有效的标签');
+        }
+    });
+}
 
     // 添加标签的函数
     function addTag(ebookId, tagName) {
@@ -404,9 +418,10 @@ function showBooksByTag(tagName) {
             treeContainer.on('changed.jstree', function (e, data) {
                 const selectedNode = data.instance.get_selected(true)[0];
                 if (selectedNode) {
-                    //alert(`选中的节点: ${selectedNode.text}`);
-                    if(selectedNode.children){
+                    if(selectedNode.original.istag){
                         showBooksByTag(selectedNode.text);
+                    }else{
+                        data.instance.toggle_node(selectedNode);
                     }
                     // 这里可以添加更多逻辑，例如根据选中的节点显示相关信息
                 }
@@ -446,9 +461,8 @@ function showBooksByTag(tagName) {
                     'parent': category.id, // 设置标签节点的父节点为当前分类节点
                     'text': tag.name,
                     'type': 'file', // 设置标签节点的类型为'file'或其他自定义类型
-                    'children': [],
+                    'istag': 'yes',
                      };
-                // node.children.push(tagNode); // 将标签节点添加到分类节点的子节点列表中
                 treeData.push(tagNode);
             });
         }
