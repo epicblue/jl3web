@@ -229,7 +229,7 @@
         <button class="delete-keyword-confirm">确认</button>
     </div>
 </div>
-<!-- 改名关键字的模态框 -->
+<!-- 改名关键字、类别的模态框 -->
 <div id="rename-keyword-modal" class="modal" style="display: none;">
     <div class="modal-content">
         <p>请输入新的关键字名称：</p>
@@ -522,18 +522,6 @@
                 'contextmenu': {
                     'items': function(node) {
                         let items = {
-                            "add_child_category": {
-                                "label": "添加子分类",
-                                "action": function(obj) {
-                                    showAddChildCategoryDialog(node.id);
-                                }
-                            },
-                            "add_keyword": {
-                                "label": "添加关键字",
-                                "action": function(obj) {
-                                    showAddKeywordDialog(node.id);
-                                }
-                            }
                         };
 
                         // 如果是关键字节点，则添加删除选项
@@ -546,11 +534,33 @@
                                 "separator_before": true
                             };
                             items["rename_keyword"] = {
-                                "label": "改名",
+                                "label": "关键字改名",
                                 "action": function(obj) {
                                     renameKeyword(node.id);
                                 }
                             };
+                        }else{
+                            
+                            items["add_child_category"] = {
+                                "label": "添加子分类",
+                                "action": function(obj) {
+                                    showAddChildCategoryDialog(node.id);
+                                }
+                            },
+                            items["add_keyword"] = {
+                                "label": "添加关键字",
+                                "action": function(obj) {
+                                    showAddKeywordDialog(node.id,text);
+                                }
+                            }
+                            items["rename_category"] = {
+                                "label": "分类改名",
+                                "action": function(obj) {
+                                    renameCategory(node.id,node.text);
+
+                                }
+                            };
+
                         }
                         return items;
                     }
@@ -622,7 +632,7 @@
     }
 
 
-    function renameKeyword(keywordId) {
+    function renameKeyword(keywordId,text) {
     const modal = document.getElementById('rename-keyword-modal');
     modal.style.display = 'flex';
 
@@ -630,7 +640,7 @@
     const confirmButton = modal.querySelector('.rename-keyword-confirm');
     const inputField = modal.querySelector('input[type="text"]');
 
-    inputField.value = ''; // 清空输入框
+    inputField.value = text; // 清空输入框
     inputField.focus(); // 设置焦点
 
     cancelButton.addEventListener('click', () => {
@@ -713,6 +723,58 @@ function updateKeywordName(keywordId, newName) {
         })
         .catch(error => console.error('Error:', error));
     }
+
+    function renameCategory(keywordId,text) {
+    const modal = document.getElementById('rename-keyword-modal');
+    modal.style.display = 'flex';
+
+    const cancelButton = modal.querySelector('.rename-keyword-cancel');
+    const confirmButton = modal.querySelector('.rename-keyword-confirm');
+    const inputField = modal.querySelector('input[type="text"]');
+
+    inputField.value = text;
+    inputField.focus(); // 设置焦点
+
+    
+        // 添加键盘事件监听器
+        modal.querySelector('input[type="text"]').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') { // 检测是否按下了回车键
+                modal.querySelector('.rename-keyword-confirm').click(); // 触发确认按钮的点击事件
+            }
+        });
+
+    cancelButton.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    confirmButton.addEventListener('click', () => {
+        const newName = inputField.value.trim();
+        if (newName) {
+            modal.style.display = 'none';
+            updateCategoryName(keywordId, newName);
+        }
+    });
+}
+function updateCategoryName(keywordId, newName) {
+    fetch(`/categories/${keywordId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: newName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message === 'Category updated successfully') {
+            alert('类别名称更新成功');
+            // 刷新树形界面
+            initCategoryTree();
+        } else {
+            alert('类别名称更新失败');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
     // 构建树形结构数据
     function buildTreeData(categories) {
         const treeData = [];
