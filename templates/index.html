@@ -31,13 +31,13 @@
 
         #category-tree {
             flex: 1; /* 自动分配空间 */
-            padding-right: 20px; /* 右侧间距 */
-            margin-top: 20px; /* 设置相同的顶部外边距 */
+            padding-right: 0px; /* 右侧间距 */
+            margin-top: 35px; /* 设置相同的顶部外边距 */
         }
 
         #download-list {
-            flex: 2; /* 自动分配两倍的空间 */
-            margin-top: 20px; /* 设置相同的顶部外边距 */
+            flex: 2.5; /* 自动分配两倍的空间 */
+            margin-top: 0px; /* 设置相同的顶部外边距 */
         }
 
         h1 {
@@ -726,10 +726,15 @@ function updateKeywordName(keywordId, newName) {
                 "icon" : "{{ url_for('static', filename='img/category-icon.png') }}"
             };
 
-            if (category.subCategories && category.subCategories.length > 0) {
-                buildTreeData(category.subCategories).forEach(cat=>treeData.push(cat));
-            }
+        if (category.subCategories && category.subCategories.length > 0) {
+            buildTreeData(category.subCategories).forEach(cat=>treeData.push(cat));
+        }
 
+        treeData.push(node); // 将分类节点添加到树形结构数据中
+    });
+
+    
+    categories.forEach(category => {
         // 添加分类的标签节点
         if (category.tags && category.tags.length > 0) {
             category.tags.forEach(tag => {
@@ -744,9 +749,6 @@ function updateKeywordName(keywordId, newName) {
                 treeData.push(tagNode);
             });
         }
-
-
-        treeData.push(node); // 将分类节点添加到树形结构数据中
     });
 
     return treeData;

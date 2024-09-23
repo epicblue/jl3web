@@ -365,7 +365,8 @@ def update_keyword_name(keyword_id):
 # 获取所有电子书列表
 @app.route('/books', methods=['GET'])
 def get_books():
-    ebooks = Ebook.query.all()
+    from sqlalchemy.orm import joinedload
+    ebooks = Ebook.query.options(joinedload('tags')).all()
     books_data = []
     for ebook in ebooks:
         book_data = {
