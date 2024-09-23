@@ -289,10 +289,10 @@ def delete_category(category_id):
         return jsonify({"error": "Category not found"}), 404
 
     # 删除所有子分类和标签
-    for subcategory in category.subcategories:
-        db.session.delete(subcategory)
-    for tag in category.tags:
-        db.session.delete(tag)
+    #if category.subcategories is not None:
+    #    return jsonify({"error": "Category not found"}), 404
+    if len(category.tags)>0:
+        return jsonify({"error": "Category not found"}), 404
 
     db.session.delete(category)
     db.session.commit()
