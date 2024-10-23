@@ -551,8 +551,9 @@
             });
 
             // 展开所有节点
-            treeContainer.jstree('open_all');
-
+            treeContainer.bind("loaded.jstree", function (e, data) {
+                treeContainer.jstree('open_all');
+            });
             // 绑定点击事件处理
             treeContainer.on('changed.jstree', function (e, data) {
                 const selectedNode = data.instance.get_selected(true)[0];
