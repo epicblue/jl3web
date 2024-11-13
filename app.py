@@ -378,6 +378,32 @@ def get_books():
         books_data.append(book_data)
     return jsonify(books_data)
 
+# 查找电子书
+@app.route('/books/search', methods=['GET'])
+def search_books():
+    search_query = request.args.get('query', '').strip()
+    if not search_query:
+        return jsonify({"error": "Search query is required"}), 400
+
+    # 根据标题和作者进行搜索
+    ebooks = Ebook.query.filter(
+        (Ebook.title.ilike(f'%{search_query}%')) |
+        (Ebook.author.ilike(f'%{search_query}%'))
+    ).all()
+
+    # 将符合条件的电子书数据转化为字典格式
+    books_data = [
+        {
+            'id': ebook.id,
+            'title': ebook.title,
+            'author': ebook.author,
+            'tags': [tag.name for tag in ebook.tags]
+        }
+        for ebook in ebooks
+    ]
+
+    return jsonify(books_data), 200
+
 # 编辑电子书名称
 @app.route('/books/<int:ebook_id>/edit_title', methods=['PUT'])
 def edit_ebook_title(ebook_id):
