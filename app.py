@@ -427,9 +427,15 @@ def download_ebook(ebook_id):
     return send_from_directory(directory=app.config['UPLOAD_FOLDER'], path=ebook.file_path, as_attachment=True)
 
 # 主页路由
-@app.route('/')
+@app.route('/manage')
 def index():
     return render_template('index.html')
+
+# 主页路由
+@app.route('/')
+def readonlyindex():
+    return render_template('index2.html')
+
 
 if __name__ == '__main__':
     print('app running')
