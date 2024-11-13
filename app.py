@@ -426,6 +426,24 @@ def download_ebook(ebook_id):
     ebook = Ebook.query.get_or_404(ebook_id)
     return send_from_directory(directory=app.config['UPLOAD_FOLDER'], path=ebook.file_path, as_attachment=True)
 
+# 删除电子书
+@app.route('/books/<int:ebook_id>', methods=['DELETE'])
+def delete_ebook(ebook_id):
+    ebook = Ebook.query.get(ebook_id)
+    if not ebook:
+        return jsonify({"error": "Ebook not found"}), 404
+    
+    # 文件系统中删除电子书文件
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], ebook.file_path)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    
+    # 数据库中删除电子书记录
+    db.session.delete(ebook)
+    db.session.commit()
+    
+    return jsonify({"message": "Ebook deleted successfully"}), 200
+
 # 主页路由
 @app.route('/manage')
 def index():

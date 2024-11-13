@@ -12,6 +12,7 @@ body {
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
+    position: relative; /* 确保绝对定位的子元素相对于这个容器定位 */
 }
 
 .row {
@@ -30,9 +31,48 @@ body {
     margin-top: 0px; /* 设置相同的顶部外边距 */
 }
 
-h1 {
-    text-align: center;
-    color: #333;
+.page-title {
+    position: absolute;
+    top: 10px; /* 距离页面顶部的距离 */
+    left: 20px; /* 距离页面左侧的距离 */
+    margin: 0;
+    font-size: 24px;
+}
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+.search-form {
+    position:absolute;
+    top: 30px;
+    right:40px;
+    display: flex;
+    align-items: center;
+}
+.search-form input[type="text"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px 0 0 4px;
+    width: 200px;
+}
+.search-form button {
+    padding: 8px 12px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+.search-form button:hover {
+    background-color: #0056b3;
 }
 
 form {
