@@ -176,15 +176,24 @@
                 window.location.href = `/download/${book.id}`;
             };
 
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = '删除';
+            deleteButton.className = 'delete-button';
+            deleteButton.addEventListener('click', function() {
+                deleteEbook(book.id);
+            });
+
             li.appendChild(tagsContainer);
             li.appendChild(document.createTextNode(' ')); // 添加空格
             li.appendChild(addTagButton);
             li.appendChild(document.createTextNode(' ')); // 添加空格
-            li.appendChild(downloadButton);
+                    li.appendChild(deleteButton);
+                    li.appendChild(document.createTextNode(' ')); // 添加空格
+                    li.appendChild(downloadButton);
             booksList.appendChild(li);
         });
     }
-    
+
     // 加载书籍列表
     function loadBooks() {
         fetch('/books')
@@ -225,15 +234,42 @@
                     window.location.href = `/download/${book.id}`;
                 };
 
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '删除';
+                deleteButton.className = 'delete-button';
+                deleteButton.addEventListener('click', function() {
+                    deleteEbook(book.id);
+                });
                 li.appendChild(tagsContainer);
                 li.appendChild(document.createTextNode(' ')); // 添加空格
                 li.appendChild(addTagButton);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
+                li.appendChild(deleteButton);
                 li.appendChild(document.createTextNode(' ')); // 添加空格
                 li.appendChild(downloadButton);
                 booksList.appendChild(li);
             });
         })
         .catch(error => console.error('Error:', error));
+    }
+    
+    // 删除书籍
+    function deleteEbook(ebookId) {
+        if (confirm('确定要删除这本书吗？')) {
+            fetch(`/books/${ebookId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Ebook deleted successfully') {
+                    alert('电子书删除成功');
+                    loadBooks(); // 刷新书籍列表
+                } else {
+                    alert('删除电子书失败');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
     }
     // 删除标签的函数
     function deleteTag(ebookId, tagName) {

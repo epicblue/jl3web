@@ -183,6 +183,15 @@ button:hover {
     text-align: center;
 }
 
+.delete-button {
+    padding: 10px 20px;
+    background-color: #007bff; /* 蓝色背景 */
+    color: #fff; /* 白色文字 */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
 .delete-keyword-cancel,
 .delete-keyword-confirm {
     margin-top: 10px;
