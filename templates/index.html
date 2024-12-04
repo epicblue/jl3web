@@ -409,7 +409,6 @@
     addTagInput.style.display = 'none';
 
 
-
     // 初始化树形界面
     function initCategoryTree() {
         // 获取树形界面的容器
@@ -426,6 +425,7 @@
             treeContainer.jstree({
                 'core' : {
                     'data' : treeData,
+                    'toggle': false, // 禁用默认的 toggle 行为
                     'themes': {
                         'responsive': true,
                         'stripes': true
@@ -500,13 +500,16 @@
                 treeContainer.jstree('open_all');
             });
             // 绑定点击事件处理
-            treeContainer.on('changed.jstree', function (e, data) {
+            treeContainer.on('click.jstree', function (e, data) {
+                var node = $(e.target).closest('li');
+                if (e.which === 1) { // 判断是否为左键点击
+                    treeContainer.jstree('toggle_node', node);
+                }
+            }).on('changed.jstree', function (e, data) {
                 const selectedNode = data.instance.get_selected(true)[0];
                 if (selectedNode) {
                     if (selectedNode.original.istag) {
                         showBooksByTag(selectedNode.text);
-                    } else {
-                        data.instance.toggle_node(selectedNode);
                     }
                 }
             });
@@ -514,6 +517,19 @@
         .catch(error => console.error('Error:', error));
     }
 
+    function updateCategoryTree(){
+            const treeContainer = $('#category-tree');
+
+        fetch('/categories')
+            .then(response => response.json())
+            .then(data => {
+                const treeData = buildTreeData(data);
+
+                treeContainer.jstree(true).settings.core.data = treeData;
+                treeContainer.jstree(true).refresh();
+            })
+            .catch(error => console.error('Error:', error));
+        }
 
 
     function showAddKeywordDialog(parentId) {
@@ -664,12 +680,17 @@
         addChildCategoryInput.style.display = 'block';
         addChildCategoryInput.querySelector('input[type="text"]').value = '';
         addChildCategoryInput.querySelector('input[type="text"]').focus();
-
         addChildCategoryInput.querySelector('.add-child-category-cancel').addEventListener('click', function() {
             addChildCategoryInput.style.display = 'none';
         });
 
         const confirmButton = addChildCategoryInput.querySelector('.add-child-category-confirm');
+        var b =function(event) {
+            if (event.key === 'Enter') { // 检测是否按下了回车键
+                confirmButton.click(); // 触发确认按钮的点击事件
+            }
+        };
+        addChildCategoryInput.querySelector('input[type="text"]').addEventListener('keydown', b);
         
         var a = function() {
             const newCategoryName = addChildCategoryInput.querySelector('input[type="text"]').value.trim();
@@ -698,7 +719,7 @@
         .then(data => {
             if (data.message === 'Subcategory created successfully') {
                 alert('子分类添加成功');
-                initCategoryTree(); // 刷新树形界面
+                updateCategoryTree(); // 刷新树形界面
             } else {
                 alert('添加子分类失败');
             }
@@ -725,10 +746,10 @@
             .then(response => response.json())
             .then(data => {
                 if (data.message === 'Category deleted successfully') {
-                    alert('关键字删除成功');
-                    initCategoryTree(); // 刷新树形界面
+                    alert('删除分类成功');
+                    updateCategoryTree();
                 } else {
-                    alert('删除关键字失败');
+                    alert('删除分类失败：'+data.message);
                 }
             })
             .catch(error => console.error('Error:', error));
@@ -787,7 +808,7 @@
                 // 刷新树形界面
                 initCategoryTree();
             } else {
-                alert('类别名称更新失败');
+                alert('类别名称更新成功。');
             }
         })
         .catch(error => console.error('Error:', error));
@@ -806,33 +827,33 @@
                 "icon" : "{{ url_for('static', filename='img/category-icon.png') }}"
             };
 
-        if (category.subCategories && category.subCategories.length > 0) {
-            buildTreeData(category.subCategories).forEach(cat=>treeData.push(cat));
-        }
+            if (category.subCategories && category.subCategories.length > 0) {
+                buildTreeData(category.subCategories).forEach(cat=>treeData.push(cat));
+            }
 
-        treeData.push(node); // 将分类节点添加到树形结构数据中
-    });
+            treeData.push(node); // 将分类节点添加到树形结构数据中
+        });
 
-    
-    categories.forEach(category => {
-        // 添加分类的标签节点
-        if (category.tags && category.tags.length > 0) {
-            category.tags.forEach(tag => {
-                const tagNode = {
-                    'id': tag.id+1000, // 为了区分标签节点和分类节点，可以给标签节点的ID加上前缀
-                    'parent': category.id, // 设置标签节点的父节点为当前分类节点
-                    'text': tag.name,
-                    'type': 'file', // 设置标签节点的类型为'file'或其他自定义类型
-                    'istag': 'yes',
-                    "icon" : "{{ url_for('static', filename='img/keyword-icon.gif') }}"
-                     };
-                treeData.push(tagNode);
-            });
-        }
-    });
+        
+        categories.forEach(category => {
+            // 添加分类的标签节点
+            if (category.tags && category.tags.length > 0) {
+                category.tags.forEach(tag => {
+                    const tagNode = {
+                        'id': tag.id+1000, // 为了区分标签节点和分类节点，可以给标签节点的ID加上前缀
+                        'parent': category.id, // 设置标签节点的父节点为当前分类节点
+                        'text': tag.name,
+                        'type': 'file', // 设置标签节点的类型为'file'或其他自定义类型
+                        'istag': 'yes',
+                        "icon" : "{{ url_for('static', filename='img/keyword-icon.gif') }}"
+                        };
+                    treeData.push(tagNode);
+                });
+            }
+        });
 
-    return treeData;
-}
+        return treeData;
+    }
 
     // 初始化树形界面
     initCategoryTree();
