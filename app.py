@@ -144,6 +144,29 @@ def delete_tag(tag_id):
         return jsonify({"message": "Tag deleted successfully"}), 200
     else:
         return jsonify({"error": "Tag not found"}), 404
+    
+# 移动标签
+@app.route('/tags/move/<int:tag_id>/<int:parent_id>', methods=['POST'])
+def move_tag(tag_id,parent_id):
+    tag = Tag.query.get(tag_id)
+    if tag:
+        tag.category_id = parent_id
+        # 删除标签本身
+        db.session.commit()
+        return jsonify({"message": "Tag 移动成功"}), 200
+    else:
+        return jsonify({"error": "Tag not found"}), 404
+@app.route('/categories/move/<int:category_id>/<int:parent_id>', methods=['POST'])
+def move_category(category_id,parent_id):
+    cat = Category.query.get(category_id)
+    if cat:
+        cat.parent_id = parent_id
+        # 删除标签本身
+        db.session.commit()
+        return jsonify({"message": "类别移动成功"}), 200
+    else:
+        return jsonify({"error": "Tag not found"}), 404
+
 
 @app.route('/categories/<int:parent_id>/keywords', methods=['POST'])
 def add_keyword(parent_id):

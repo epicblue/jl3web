@@ -168,9 +168,12 @@
             const addTagButton = document.createElement('button');
             addTagButton.className = 'add-tag-button';
             addTagButton.textContent = '添加标签';
-            addTagButton.addEventListener('click', function() {
+
+            var addtagfun = function() {
                 showAddTagInput(book.id);
-            });
+                addTagButton.removeEventListener('click', a);
+            };
+            addTagButton.addEventListener('click', addtagfun);
 
             const downloadButton = document.createElement('button');
             downloadButton.textContent = '下载';
@@ -336,7 +339,7 @@
                     alert('标签添加成功');
                     loadBooks(); // 刷新书籍列表
                 } else {
-                    alert('添加标签失败');
+                    alert('添加标签失败：'+data.message);
                 }
             })
             .catch(error => console.error('Error:', error));
@@ -374,9 +377,11 @@
                     const addTagButton = document.createElement('button');
                     addTagButton.className = 'add-tag-button';
                     addTagButton.textContent = '添加标签';
-                    addTagButton.addEventListener('click', function() {
+                    var addtagfun = function() {
                         showAddTagInput(book.id);
-                    });
+                        addTagButton.removeEventListener('click', a);
+                    };
+                    addTagButton.addEventListener('click', addtagfun);
 
                     const downloadButton = document.createElement('button');
                     downloadButton.textContent = '下载';
@@ -428,6 +433,7 @@
                 'core' : {
                     'data' : treeData,
                     'toggle': false, // 禁用默认的 toggle 行为
+                    'check_callback': true, // 确保可以对树进行修改（例如移动节点）
                     'themes': {
                         'responsive': true,
                         'stripes': true
@@ -441,7 +447,7 @@
                         'icon' : 'fa fa-file jstree-icon'
                     }
                 },
-                'plugins' : ['types', 'contextmenu'],
+                'plugins' : ['types', 'contextmenu', 'dnd'],
                 'contextmenu': {
                     'items': function(node) {
                         let items = {
@@ -494,6 +500,13 @@
                         }
                         return items;
                     }
+                },
+            
+                "dnd": {
+                    "copy": false,             // 禁止复制，仅允许移动
+                    "is_draggable": true,      // 允许节点被拖动
+                    "inside_pos": "last",      // 默认放置到目标节点的最后一个位置
+                    "touch": false             // 禁用触屏拖放（如果需要支持触屏设备可以设置为true）
                 }
             });
 
@@ -502,20 +515,67 @@
                 treeContainer.jstree('open_all');
             });
             // 绑定点击事件处理
-            treeContainer.on('click.jstree', function (e, data) {
+            treeContainer
+            .on('click.jstree', function (e, data) {
                 var node = $(e.target).closest('li');
                 if (e.which === 1) { // 判断是否为左键点击
                     treeContainer.jstree('toggle_node', node);
                 }
-            }).on('changed.jstree', function (e, data) {
+            })
+            .on('changed.jstree', function (e, data) {
                 const selectedNode = data.instance.get_selected(true)[0];
                 if (selectedNode) {
                     if (selectedNode.original.istag) {
                         showBooksByTag(selectedNode.text);
                     }
                 }
+            })    // 拖放事件监听
+            .on('move_node.jstree', function(e, data) {
+                console.log("拖动完成");
+                console.log("节点被拖动:", data.node.id); // 被拖动的节点
+                console.log("移动到:", data.parent); // 新的父节点
+                if(data.parent>1000){
+                    updateCategoryTree();
+                }
+                else if(data.node.id>1000){
+                    fetch('/tags/move/'+(data.node.id-1000)+'/'+data.parent,{
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ node: data.node })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.message=="Tag 移动成功"){
+                            updateCategoryTree();
+                        }else{
+                            alert("操作失败");
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+                else if(data.node.id<1000){
+                    fetch('/categories/move/'+data.node.id+'/'+data.parent,{
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ node: data.node })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.message=="类别移动成功"){
+                            updateCategoryTree();
+                        }else{
+                            alert("操作失败");
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+
             });
-        })
+            })
         .catch(error => console.error('Error:', error));
     }
 
