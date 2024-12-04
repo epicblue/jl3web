@@ -20,27 +20,29 @@
 
 <body>
     <div class="container">
-    <h1>共享电子书 JL3</h1>
+        <div class="header">
+            <h1>共享电子书 JL3</h1>
+            <div class="search-form">
+                <form id="search-form">
+                    <input type="text" id="search-query" placeholder="搜索书籍">
+                    <button type="submit">搜索</button>
+                </form>
+            </div>
+        </div>
 
 <!-- 上传表单 -->
 <form id="upload-form">
     <label for="title">书名:</label>
     <input type="text" id="title" required>
     <label for="author">作者:</label>
-    <input type="text" id="author" required>
+    <input type="text" id="author" required style="width: 100px;">
     <label for="file">选择文件:</label>
     <input type="file" id="file" required>
-    <label for="tags">标签 (用逗号分隔):</label>
+    <label for="tags">标签(逗号分隔):</label>
     <input type="text" id="tags" required>
     <button type="submit">上传</button>
 </form>
 
-<div class="search-form">
-    <form id="search-form">
-        <input type="text" id="search-query" placeholder="搜索书籍">
-        <button type="submit">搜索</button>
-    </form>
-</div>
 
 <div class="row">
     <div id="category-tree"></div>
@@ -187,9 +189,9 @@
             li.appendChild(document.createTextNode(' ')); // 添加空格
             li.appendChild(addTagButton);
             li.appendChild(document.createTextNode(' ')); // 添加空格
-                    li.appendChild(deleteButton);
-                    li.appendChild(document.createTextNode(' ')); // 添加空格
-                    li.appendChild(downloadButton);
+            li.appendChild(deleteButton);
+            li.appendChild(document.createTextNode(' ')); // 添加空格
+            li.appendChild(downloadButton);
             booksList.appendChild(li);
         });
     }
@@ -223,7 +225,7 @@
 
                 const addTagButton = document.createElement('button');
                 addTagButton.className = 'add-tag-button';
-                addTagButton.textContent = '添加标签';
+                addTagButton.textContent = '+标签';
                 addTagButton.addEventListener('click', function() {
                     showAddTagInput(book.id);
                 });
@@ -578,9 +580,9 @@
         .then(data => {
             if (data.message === 'Keyword added successfully') {
                 alert('关键字添加成功');
-                initCategoryTree(); // 刷新树形界面
+                updateCategoryTree(); // 刷新树形界面
             } else {
-                alert('添加关键字失败');
+                alert('添加关键字失败:'+data.message);
             }
         })
         .catch(error => console.error('Error:', error));
@@ -606,10 +608,10 @@
             .then(data => {
                 if (data.message === 'Tag deleted successfully') {
                     alert('关键字删除成功');
-                    initCategoryTree(); // 刷新树形界面
                 } else {
-                    alert('删除关键字失败');
+                    alert('删除关键字失败：'+data.message);
                 }
+                updateCategoryTree(); // 刷新树形界面
             })
             .catch(error => console.error('Error:', error));
             
@@ -663,11 +665,11 @@
         .then(data => {
             if (data.message === 'Keyword name updated successfully') {
                 alert('关键字更新成功');
-                // 刷新树形界面
-                initCategoryTree();
             } else {
-                alert('关键字更新失败');
+                alert('关键字更新失败：'+data.message);
             }
+            // 刷新树形界面
+            updateCategoryTree();
         })
         .catch(error => console.error('Error:', error));
     }
@@ -719,10 +721,10 @@
         .then(data => {
             if (data.message === 'Subcategory created successfully') {
                 alert('子分类添加成功');
-                updateCategoryTree(); // 刷新树形界面
             } else {
                 alert('添加子分类失败');
             }
+            updateCategoryTree(); // 刷新树形界面
         })
         .catch(error => console.error('Error:', error));
     }
@@ -747,10 +749,10 @@
             .then(data => {
                 if (data.message === 'Category deleted successfully') {
                     alert('删除分类成功');
-                    updateCategoryTree();
                 } else {
                     alert('删除分类失败：'+data.message);
                 }
+                updateCategoryTree();
             })
             .catch(error => console.error('Error:', error));
             
@@ -805,11 +807,10 @@
         .then(data => {
             if (data.message === 'Category updated successfully') {
                 alert('类别名称更新成功');
-                // 刷新树形界面
-                initCategoryTree();
             } else {
-                alert('类别名称更新成功。');
+                alert('类别名称更新失败：'+data.message);
             }
+            updateCategoryTree(); // 刷新树形界面
         })
         .catch(error => console.error('Error:', error));
     }
