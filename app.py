@@ -452,7 +452,7 @@ def index():
 # 主页路由
 @app.route('/')
 def readonlyindex():
-    return render_template('index2.html')
+    return render_template('readonly.html')
 
 
 if __name__ == '__main__':
