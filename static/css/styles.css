@@ -116,6 +116,24 @@ button:hover {
     margin-top: 20px;
 }
 
+.custom-context-menu {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.menu-item:hover {
+    background-color: #f0f0f0;
+}
+
 #books {
     list-style-type: none; /* 移除默认的列表样式 */
     padding: 0;

@@ -122,7 +122,7 @@ def get_books_by_tag(tag_name):
             'id': ebook.id,
             'title': ebook.title,
             'author': ebook.author,
-            'tags': [tag.name for tag in ebook.tags]
+            'tags': [{'id': tag.id, 'name': tag.name} for tag in ebook.tags]
         }
         for ebook in ebooks
     ]
@@ -355,11 +355,11 @@ def add_tag(ebook_id):
         return jsonify({'message': 'Tag already exists for this ebook'}), 400
 
 # 删除电子书的标签
-@app.route('/tags/<int:ebook_id>/<string:tag_name>', methods=['DELETE'])
-def delete_ebook_tag(ebook_id, tag_name):
+@app.route('/books/<int:ebook_id>/tags/<int:tag_id>', methods=['DELETE'])
+def delete_ebook_tag(ebook_id, tag_id):
     ebook = Ebook.query.get(ebook_id)
     if ebook:
-        tag = Tag.query.filter_by(name=tag_name).first()
+        tag = Tag.query.filter_by(id=tag_id).first()
         if tag and tag in ebook.tags:
             ebook.tags.remove(tag)
             db.session.commit()
@@ -396,7 +396,7 @@ def get_books():
             'id': ebook.id,
             'title': ebook.title,
             'author': ebook.author,
-            'tags': [tag.name for tag in ebook.tags]
+            'tags': [{'id': tag.id, 'name': tag.name} for tag in ebook.tags]
         }
         books_data.append(book_data)
     return jsonify(books_data)
@@ -420,7 +420,7 @@ def search_books():
             'id': ebook.id,
             'title': ebook.title,
             'author': ebook.author,
-            'tags': [tag.name for tag in ebook.tags]
+            'tags': [{'id': tag.id, 'name': tag.name} for tag in ebook.tags]
         }
         for ebook in ebooks
     ]

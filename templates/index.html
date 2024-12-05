@@ -83,6 +83,10 @@
     </div>
 </div>
 
+<div id="custom-context-menu" class="custom-context-menu">
+    <div class="menu-item" data-action="delete">删除标签</div>
+</div>
+
 
 
 
@@ -140,72 +144,10 @@
             })
             .catch(error => console.error('Error:', error));
     });
-
-    // 显示搜索结果
-    function displaySearchResults(books) {
+    function showBooks(data){
         const booksList = document.getElementById('books');
-        booksList.innerHTML = ''; // 清空列表
-
-        books.forEach(book => {
-            const li = document.createElement('li');
-            li.className = 'book-item';
-            li.textContent = `${book.title} - ${book.author}`;
-
-            // 添加标签列表
-            const tagsContainer = document.createElement('span');
-            tagsContainer.className = 'tags-container';
-
-            book.tags.forEach(tag => {
-                const tagItem = document.createElement('span');
-                tagItem.className = 'tag-item';
-                tagItem.textContent = tag + ' ';
-                tagItem.addEventListener('click', function() {
-                    showBooksByTag(tag); // 调用显示对应电子书的函数
-                });
-                tagsContainer.appendChild(tagItem);
-            });
-
-            const addTagButton = document.createElement('button');
-            addTagButton.className = 'add-tag-button';
-            addTagButton.textContent = '添加标签';
-
-            var addtagfun = function() {
-                showAddTagInput(book.id);
-                addTagButton.removeEventListener('click', a);
-            };
-            addTagButton.addEventListener('click', addtagfun);
-
-            const downloadButton = document.createElement('button');
-            downloadButton.textContent = '下载';
-            downloadButton.onclick = () => {
-                window.location.href = `/download/${book.id}`;
-            };
-
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = '删除';
-            deleteButton.className = 'delete-button';
-            deleteButton.addEventListener('click', function() {
-                deleteEbook(book.id);
-            });
-
-            li.appendChild(tagsContainer);
-            li.appendChild(document.createTextNode(' ')); // 添加空格
-            li.appendChild(addTagButton);
-            li.appendChild(document.createTextNode(' ')); // 添加空格
-            li.appendChild(deleteButton);
-            li.appendChild(document.createTextNode(' ')); // 添加空格
-            li.appendChild(downloadButton);
-            booksList.appendChild(li);
-        });
-    }
-
-    // 加载书籍列表
-    function loadBooks() {
-        fetch('/books')
-        .then(response => response.json())
-        .then(data => {
-            const booksList = document.getElementById('books');
             booksList.innerHTML = ''; // 清空列表
+            const customContextMenu = document.getElementById('custom-context-menu');
 
             data.forEach(book => {
                 const li = document.createElement('li');
@@ -216,14 +158,49 @@
                 const tagsContainer = document.createElement('span');
                 tagsContainer.className = 'tags-container';
 
+                
+                // 删除标签右键菜单
+                function showCustomContextMenu(event,book, tag) {
+                    customContextMenu.style.display = 'block';
+                    customContextMenu.style.left = `${event.pageX}px`;
+                    customContextMenu.style.top = `${event.pageY}px`;
+
+                    console.log(`${book} 右键点击了标签: ${tag}`);
+                    // 处理右键菜单项点击事件
+                    const deleteMenuItem = customContextMenu.querySelector('[data-action="delete"]');
+                    deleteMenuItem.addEventListener('click', function() {
+                        fetch(`/books/${book.id}/tags/${tag.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 'tag': tag })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                             if (data.message === 'Tag deleted successfully') {
+                                 alert('标签删除成功');
+                             }else{
+                                 alert('删除标签失败');
+                             }
+                        })
+                        .catch(error => console.error('Error:', error));
+                    });         // 在这里创建并显示你的自定义右键菜单
+                }
+
                 book.tags.forEach(tag => {
                     const tagItem = document.createElement('span');
                     tagItem.className = 'tag-item';
-                    tagItem.textContent = tag + ' ';
+                    tagItem.textContent = tag.name + ' ';
                     tagItem.addEventListener('click', function() {
                         showBooksByTag(tag); // 调用显示对应电子书的函数
                     });
                     tagsContainer.appendChild(tagItem);
+                    // 添加右键菜单事件
+                    tagItem.addEventListener('contextmenu', function(event) {
+                        event.preventDefault(); // 阻止默认的右键菜单
+                        showCustomContextMenu(event, book, tag); // 显示自定义右键菜单
+                    });
                 });
 
                 const addTagButton = document.createElement('button');
@@ -253,11 +230,27 @@
                 li.appendChild(document.createTextNode(' ')); // 添加空格
                 li.appendChild(downloadButton);
                 booksList.appendChild(li);
+            
+                // 点击页面其他地方隐藏右键菜单
+                document.addEventListener('click', function() {
+                    customContextMenu.style.display = 'none';
+                });
             });
+    }
+    // 显示搜索结果
+    function displaySearchResults(books) {
+        showBooks(books);
+    }
+
+    // 加载书籍列表
+    function loadBooks() {
+        fetch('/books')
+        .then(response => response.json())
+        .then(data => {
+            showBooks(data);
         })
         .catch(error => console.error('Error:', error));
     }
-    
     // 删除书籍
     function deleteEbook(ebookId) {
         if (confirm('确定要删除这本书吗？')) {
