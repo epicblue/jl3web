@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子书上传 epicblue</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.min.css') }}" />
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jstree.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>共享电子书 JL3</h1>
+            <div class="search-form">
+                <form id="search-form">
+                    <input type="text" id="search-query" placeholder="搜索书籍">
+                    <button type="submit">搜索</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div id="category-tree"></div>
+            <div id="download-list">
+                <ul id="books"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 处理搜索表单提交
+        document.getElementById('search-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const searchQuery = document.getElementById('search-query').value.trim();
+            if (!searchQuery) {
+                alert('请输入搜索关键词');
+                return;
+            }
+
+            fetch(`/books/search?query=${encodeURIComponent(searchQuery)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        displaySearchResults(data);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+        function showBooks(books) {            const booksList = document.getElementById('books');
+            booksList.innerHTML = ''; // 清空列表
+
+            books.forEach(book => {
+                const li = document.createElement('li');
+                li.className = 'book-item';
+
+                // 书名和作者
+                const titleAuthorDiv = document.createElement('div');
+                titleAuthorDiv.className = 'title-author';
+                titleAuthorDiv.textContent = `${book.title} - ${book.author}`;
+
+                // 标签列表
+                const tagsContainer = document.createElement('div');
+                tagsContainer.className = 'tags-container';
+
+                book.tags.forEach(tag => {
+                    const tagItem = document.createElement('span');
+                    tagItem.className = 'tag-item';
+                    tagItem.textContent = tag.name + ' ';
+                    tagItem.addEventListener('click', function() {
+                        showBooksByTag(tag.name); // 调用显示对应电子书的函数
+                    });
+                    tagsContainer.appendChild(tagItem);
+                });
+
+                // 下载按钮
+                const downloadButton = document.createElement('button');
+                downloadButton.textContent = '下载';
+                downloadButton.onclick = () => {
+                    window.location.href = `/download/${book.id}`;
+                };
+
+                li.appendChild(titleAuthorDiv);
+                li.appendChild(tagsContainer);
+                li.appendChild(downloadButton);
+                booksList.appendChild(li);
+            });
+        }
+        // 显示搜索结果
+        function displaySearchResults(books) {
+            showBooks(books);
+        }
+
+        // 加载书籍列表
+        function loadBooks() {
+            fetch('/books')
+                .then(response => response.json())
+                .then(data => {
+                    showBooks(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // 显示指定标签对应的电子书
+        function showBooksByTag(tagName) {
+            const encodedTagName = encodeURIComponent(tagName);
+            fetch(`/books/tags/${encodedTagName}`)
+                .then(response => response.json())
+                .then(data => {
+                    
+                    showBooks(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // 初始化加载书籍列表    
+        loadBooks();
+
+        var isRightClick = false; // 初始化标志位
+        
+        // 初始化树形界面
+        function initCategoryTree() {
+            const treeContainer = $('#category-tree');
+
+            fetch('/categories')
+                .then(response => response.json())
+                .then(data => {
+                    const treeData = buildTreeData(data);
+
+                    treeContainer.jstree({
+                        'core' : {
+                            'data' : treeData,
+                            'themes': {
+                                'responsive': true,
+                                'stripes': true
+                            }
+                        },
+                        'types' : {
+                            'default' : {
+                                'icon' : 'fa fa-folder jstree-icon'
+                            },
+                            'file' : {
+                                'icon' : 'fa fa-file jstree-icon'
+                            }
+                        },
+                        'plugins' : ['types', 'contextmenu'],
+                        'contextmenu': {
+                            'items': function(node) {
+                                let items = {};
+                                return items;
+                            }
+                        }
+                    });
+
+                    treeContainer.bind("loaded.jstree", function (e, data) {
+                        treeContainer.jstree('open_all');
+                    });
+                    treeContainer.on('changed.jstree', function (e, data) {
+                        // 右键时候不触发事件
+
+                        const selectedNode = data.instance.get_selected(true)[0];
+                        if (selectedNode) {
+                            if (selectedNode.original.istag) {
+                                showBooksByTag(selectedNode.text);
+                            } else {
+                                data.instance.toggle_node(selectedNode);
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        // 更新树形界面
+        function updateCategoryTree(){
+            const treeContainer = $('#category-tree');
+
+        fetch('/categories')
+            .then(response => response.json())
+            .then(data => {
+                const treeData = buildTreeData(data);
+
+                treeContainer.jstree(true).settings.core.data = treeData;
+                treeContainer.jstree(true).refresh();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        // 构建树形结构数据
+        function buildTreeData(categories) {
+            const treeData = [];
+
+            categories.forEach(category => {
+                const node = {
+                    'id'   : category.id,
+                    'parent': category.parent,
+                    'text' : category.name,
+                    'type' : 'default',
+                    "icon" : "{{ url_for('static', filename='img/category-icon.png') }}"
+                };
+
+                if (category.subCategories && category.subCategories.length > 0) {
+                    buildTreeData(category.subCategories).forEach(cat => treeData.push(cat));
+                }
+
+                treeData.push(node);
+            });
+
+            categories.forEach(category => {
+                if (category.tags && category.tags.length > 0) {
+                    category.tags.forEach(tag => {
+                        const tagNode = {
+                            'id': tag.id + 1000,
+                            'parent': category.id,
+                            'text': tag.name,
+                            'type': 'file',
+                            'istag': 'yes',
+                            "icon" : "{{ url_for('static', filename='img/keyword-icon.gif') }}"
+                        };
+                        treeData.push(tagNode);
+                    });
+                }
+            });
+
+            return treeData;
+        }
+
+        // 初始化树形界面
+        initCategoryTree();
+    </script>
+    <p class="copyright">copyright © 2024 epicblue</p>
+</body>
+</html>

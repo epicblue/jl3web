@@ -1,0 +1,272 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+}
+
+.container {
+    max-width: 1200px; /* 增加宽度以适应并排布局 */
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    position: relative; /* 确保绝对定位的子元素相对于这个容器定位 */
+}
+
+.row {
+    display: flex; /* 使用flex布局 */
+    justify-content: space-between; /* 分隔两个部分 */
+}
+
+#category-tree {
+    flex: 1; /* 自动分配空间 */
+    padding-right: 10px; /* 右侧间距 */
+    margin-top: 35px; /* 设置相同的顶部外边距 */
+    overflow-y: auto; /* 添加滚动条 */
+    max-height: 500px; /* 设置最大高度 */
+}
+
+#download-list {
+    flex: 2.5; /* 自动分配两倍的空间 */
+    margin-top: 0px; /* 设置相同的顶部外边距 */
+    overflow-y: auto; /* 添加滚动条 */
+    max-height: 500px; /* 设置最大高度 */
+}
+
+.page-title {
+    position: absolute;
+    top: 10px; /* 距离页面顶部的距离 */
+    left: 20px; /* 距离页面左侧的距离 */
+    margin: 0;
+    font-size: 24px;
+}
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+.search-form {
+    position:absolute;
+    top: 30px;
+    right:40px;
+    display: flex;
+    align-items: center;
+}
+.search-form input[type="text"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px 0 0 4px;
+    width: 200px;
+}
+.search-form button {
+    padding: 8px 12px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+.search-form button:hover {
+    background-color: #0056b3;
+}
+
+form {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center; /* 水平居中对齐 */
+}
+
+label {
+    display: inline-block;
+    margin-right: 10px;
+    color: #333;
+}
+
+input[type="text"], input[type="file"] {
+    padding: 10px;
+    margin-right: 10px;
+    width: 200px; /* 固定宽度 */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #007bff; /* 蓝色背景 */
+    color: #fff; /* 白色文字 */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#download-list {
+    margin-top: 20px;
+}
+
+.custom-context-menu {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.menu-item:hover {
+    background-color: #f0f0f0;
+}
+
+#books {
+    list-style-type: none; /* 移除默认的列表样式 */
+    padding: 0;
+    margin: 0;
+}
+
+.book-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #ddd; /* 添加底部边线 */
+    transition: background-color 0.3s ease;
+}
+
+.book-item:hover {
+    background-color: #f0f0f0; /* 鼠标悬停时的背景颜色 */
+}
+
+.title-author {
+    font-size: 16px;
+    font-weight: bold;
+    flex: 1; /* 占据剩余空间 */
+}
+
+.tags-container {
+    font-size: 12px;
+    color: #555;
+    flex: 1; /* 占据剩余空间 */
+}
+
+.tag-item {
+    background-color: #f0f0f0;
+    padding: 2px 5px;
+    margin-right: 5px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.tag-item:hover {
+    background-color: #e1e1e1;
+}
+
+.download-button {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.download-button:hover {
+    background-color: #0056b3;
+}
+
+.right-aligned {
+    float: right;
+}
+
+.add-tag-button {
+    padding: 5px 10px;
+    margin-left: 5px;
+}
+
+.add-tag-input {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.add-tag-input input[type="text"] {
+    width: 300px;
+    padding: 5px;
+    margin-right: 10px;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.delete-button {
+    padding: 10px 20px;
+    background-color: #007bff; /* 蓝色背景 */
+    color: #fff; /* 白色文字 */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.delete-keyword-cancel,
+.delete-keyword-confirm {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.delete-keyword-confirm {
+    background-color: #d9534f;
+    color: white;
+}
+
+.copyright {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+    font-size: 14px;
+}
