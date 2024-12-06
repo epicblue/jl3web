@@ -41,7 +41,7 @@
                 return;
             }
 
-            fetch(`/books/search?query=${encodeURIComponent(searchQuery)}`)
+            fetch(`/ebooks/books/search?query=${encodeURIComponent(searchQuery)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -99,7 +99,7 @@
 
         // 加载书籍列表
         function loadBooks() {
-            fetch('/books')
+            fetch('/ebooks/books')
                 .then(response => response.json())
                 .then(data => {
                     showBooks(data);
@@ -110,7 +110,7 @@
         // 显示指定标签对应的电子书
         function showBooksByTag(tagName) {
             const encodedTagName = encodeURIComponent(tagName);
-            fetch(`/books/tags/${encodedTagName}`)
+            fetch(`/ebooks/books/tags/${encodedTagName}`)
                 .then(response => response.json())
                 .then(data => {
                     
@@ -128,7 +128,7 @@
         function initCategoryTree() {
             const treeContainer = $('#category-tree');
 
-            fetch('/categories')
+            fetch('/ebooks/categories')
                 .then(response => response.json())
                 .then(data => {
                     const treeData = buildTreeData(data);
@@ -139,7 +139,7 @@
                             'themes': {
                                 'responsive': true,
                                 'dots' : false,
-                                'stripes': true,
+                                'stripes': false
                             }
                         },
                         'types' : {
@@ -150,7 +150,7 @@
                                 'icon' : 'fa fa-file jstree-icon'
                             }
                         },
-                        'plugins' : ['types', 'contextmenu'],
+                        'plugins' : ['types', 'contextmenu', 'themes'],
                         'contextmenu': {
                             'items': function(node) {
                                 let items = {};
@@ -181,7 +181,7 @@
         function updateCategoryTree(){
             const treeContainer = $('#category-tree');
 
-        fetch('/categories')
+        fetch('/ebooks/categories')
             .then(response => response.json())
             .then(data => {
                 const treeData = buildTreeData(data);

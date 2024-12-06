@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子书上传 epicblue</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.min.css') }}" />
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jstree.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes/default/style.css') }}" />
+</head>
+
+
+
+
+
+
+
+
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>共享电子书 JL3</h1>
+            <div class="search-form">
+                <form id="search-form">
+                    <input type="text" id="search-query" placeholder="搜索书籍">
+                    <button type="submit">搜索</button>
+                </form>
+            </div>
+        </div>
+
+<!-- 上传表单 -->
+<form id="upload-form">
+    <label for="title">书名:</label>
+    <input type="text" id="title" required>
+    <label for="author">作者:</label>
+    <input type="text" id="author" required style="width: 100px;">
+    <label for="file">选择文件:</label>
+    <input type="file" id="file" required>
+    <label for="tags">标签(逗号分隔):</label>
+    <input type="text" id="tags" required>
+    <button type="submit">上传</button>
+</form>
+
+
+<div class="row">
+    <div id="category-tree"></div>
+    <div id="download-list">
+        <ul id="books"></ul>
+    </div>
+</div>
+</div>
+
+<!-- 添加子分类的输入框 -->
+<div id="add-child-category-input" class="add-tag-input" style="display: none;">
+    <input type="text" placeholder="输入新的子分类名称">
+    <button class="add-child-category-cancel">取消</button>
+    <button class="add-child-category-confirm">确认</button>
+</div>
+
+<div id="add-keyword-input" class="add-tag-input" style="display: none;">
+    <input type="text" placeholder="输入新关键字">
+    <button class="add-keyword-cancel">取消</button>
+    <button class="add-keyword-confirm">确认</button>
+</div>
+
+<!-- 删除关键字的模态框 -->
+<div id="delete-keyword-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <p>确定要删除此节点吗？</p>
+        <button class="delete-keyword-cancel">取消</button>
+        <button class="delete-keyword-confirm">确认</button>
+    </div>
+</div>
+<!-- 改名关键字、类别的模态框 -->
+<div id="rename-keyword-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <p>请输入新的关键字名称：</p>
+        <input type="text" placeholder="新名称">
+        <button class="rename-keyword-cancel">取消</button>
+        <button class="rename-keyword-confirm">确认</button>
+    </div>
+</div>
+
+<div id="custom-context-menu" class="custom-context-menu">
+    <div class="menu-item" data-action="delete">删除标签</div>
+</div>
+
+
+
+
+
+
+
+
+<script>
+    // 上传表单提交事件
+    document.getElementById('upload-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const title = document.getElementById('title').value;
+        const author = document.getElementById('author').value;
+        const file = document.getElementById('file').files[0];
+        const tags = document.getElementById('tags').value;
+
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('author', author);
+        formData.append('file', file);
+        formData.append('tags', tags);
+
+        fetch('/ebooks/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            // 刷新书籍列表
+            loadBooks();
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    // 处理搜索表单提交
+    document.getElementById('search-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const searchQuery = document.getElementById('search-query').value.trim();
+        if (!searchQuery) {
+            alert('请输入搜索关键词');
+            return;
+        }
+
+        fetch(`/ebooks/books/search?query=${encodeURIComponent(searchQuery)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    displaySearchResults(data);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    });
+    function showBooks(data){
+        const booksList = document.getElementById('books');
+            booksList.innerHTML = ''; // 清空列表
+            const customContextMenu = document.getElementById('custom-context-menu');
+
+            data.forEach(book => {
+                const li = document.createElement('li');
+                li.className = 'book-item';
+                li.textContent = `${book.title} - ${book.author}`;
+
+                // 添加标签列表
+                const tagsContainer = document.createElement('span');
+                tagsContainer.className = 'tags-container';
+
+                
+                // 删除标签右键菜单
+                function showCustomContextMenu(event,book, tag) {
+                    customContextMenu.style.display = 'block';
+                    customContextMenu.style.left = `${event.pageX}px`;
+                    customContextMenu.style.top = `${event.pageY}px`;
+
+                    console.log(`${book} 右键点击了标签: ${tag}`);
+                    // 处理右键菜单项点击事件
+                    const deleteMenuItem = customContextMenu.querySelector('[data-action="delete"]');
+                    deleteMenuItem.addEventListener('click', function() {
+                        fetch(`/ebooks/books/${book.id}/tags/${tag.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 'tag': tag })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                             if (data.message === 'Tag deleted successfully') {
+                                 alert('标签删除成功');
+                             }else{
+                                 alert('删除标签失败');
+                             }
+                             loadBooks();
+                        })
+                        .catch(error => console.error('Error:', error));
+                    });         // 在这里创建并显示你的自定义右键菜单
+                }
+
+                // 显示已有标签
+                book.tags.forEach(tag => {
+                    const tagItem = document.createElement('span');
+                    tagItem.className = 'tag-item';
+                    tagItem.textContent = tag.name + ' ';
+                    tagItem.addEventListener('click', function() {
+                        showBooksByTag(tag.name); // 调用显示对应电子书的函数
+                    });
+                    tagsContainer.appendChild(tagItem);
+                    // 已有标签的右键菜单事件
+                    tagItem.addEventListener('contextmenu', function(event) {
+                        event.preventDefault(); // 阻止默认的右键菜单
+                        showCustomContextMenu(event, book, tag); // 显示自定义右键菜单
+                    });
+                });
+
+                // 添加标签按钮
+                const addTagButton = document.createElement('button');
+                addTagButton.className = 'add-tag-button';
+                addTagButton.textContent = '+标签';
+                addTagButton.addEventListener('click', function() {
+                    showAddTagInput(book.id);
+                });
+
+                // 下载电子书按钮
+                const downloadButton = document.createElement('button');
+                downloadButton.textContent = '下载';
+                downloadButton.onclick = () => {
+                    window.location.href = `/download/${book.id}`;
+                };
+                // 删除电子书按钮
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '删除';
+                deleteButton.className = 'delete-button';
+                deleteButton.addEventListener('click', function() {
+                    deleteEbook(book.id);
+                });
+                li.appendChild(tagsContainer);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
+                li.appendChild(addTagButton);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
+                li.appendChild(deleteButton);
+                li.appendChild(document.createTextNode(' ')); // 添加空格
+                li.appendChild(downloadButton);
+                booksList.appendChild(li);
+            
+                // 点击页面其他地方隐藏右键菜单
+                document.addEventListener('click', function() {
+                    customContextMenu.style.display = 'none';
+                });
+            });
+    }
+    // 显示搜索结果
+    function displaySearchResults(books) {
+        showBooks(books);
+    }
+
+    // 加载书籍列表
+    function loadBooks() {
+        fetch('/ebooks/books')
+        .then(response => response.json())
+        .then(data => {
+            showBooks(data);
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    // 删除书籍
+    function deleteEbook(ebookId) {
+        if (confirm('确定要删除这本书吗？')) {
+            fetch(`/ebooks/books/${ebookId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Ebook deleted successfully') {
+                    alert('电子书删除成功');
+                    loadBooks(); // 刷新书籍列表
+                } else {
+                    alert('删除电子书失败');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    }
+    // 删除标签的函数
+    function deleteTag(ebookId, tagName) {
+        fetch(`/ebooks/tags/${ebookId}/${tagName}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'Tag deleted successfully') {
+                alert('标签删除成功');
+                loadBooks(); // 刷新书籍列表
+            } else {
+                alert('删除标签失败');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // 显示添加标签的输入框
+    function showAddTagInput(ebookId) {
+        const addTagInput = document.getElementById('add-tag-input');
+        addTagInput.style.display = 'block';
+        addTagInput.querySelector('input[type="text"]').value = '';
+
+        // 设置焦点到文本框
+        addTagInput.querySelector('input[type="text"]').focus();
+
+        // 添加键盘事件监听器
+        addTagInput.querySelector('input[type="text"]').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') { // 检测是否按下了回车键
+                addTagInput.querySelector('.add-tag-confirm').click(); // 触发确认按钮的点击事件
+            }
+        });
+
+        addTagInput.querySelector('.add-tag-cancel').addEventListener('click', function() {
+            addTagInput.style.display = 'none';
+        });
+
+        addTagInput.querySelector('.add-tag-confirm').addEventListener('click', function() {
+            const newTag = addTagInput.querySelector('input[type="text"]').value.trim();
+            if (newTag) {
+                addTag(ebookId, newTag);
+                addTagInput.style.display = 'none';
+            } else {
+                alert('请输入有效的标签');
+            }
+        });
+    }
+
+        // 添加标签的函数
+        function addTag(ebookId, tagName) {
+            fetch(`/ebooks/tags/${ebookId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ tag: tagName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Tag added successfully') {
+                    alert('标签添加成功');
+                    loadBooks(); // 刷新书籍列表
+                } else {
+                    alert('添加标签失败：'+data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+    // 显示指定标签对应的电子书
+    function showBooksByTag(tagName) {
+
+        const encodedTagName = encodeURIComponent(tagName);
+            fetch(`/ebooks/books/tags/${encodedTagName}`)
+            .then(response => response.json())
+            .then(data => {
+                showBooks(data);
+            })
+        .catch(error => console.error('Error:', error));
+    }
+    // 初始化加载书籍列表
+    
+    loadBooks();
+
+    // 添加添加标签的输入框
+    const addTagInput = document.createElement('div');
+    addTagInput.id = 'add-tag-input';
+    addTagInput.className = 'add-tag-input';
+    addTagInput.innerHTML = `
+        <input type="text" placeholder="输入新标签">
+        <button class="add-tag-cancel">取消</button>
+        <button class="add-tag-confirm">确认</button>
+    `;
+    document.body.appendChild(addTagInput);
+    addTagInput.style.display = 'none';
+
+
+    // 初始化树形界面
+    function initCategoryTree() {
+        // 获取树形界面的容器
+        const treeContainer = $('#category-tree');
+
+        // 从服务器获取分类数据
+        fetch('/ebooks/categories')
+        .then(response => response.json())
+        .then(data => {
+            // 构建树形结构数据
+            const treeData = buildTreeData(data);
+
+            // 初始化 jstree
+            treeContainer.jstree({
+                'core' : {
+                    'data' : treeData,
+                    'toggle': false, // 禁用默认的 toggle 行为
+                    'check_callback': true, // 确保可以对树进行修改（例如移动节点）
+                    'themes': {
+                        'responsive': true,
+                        'stripes': true,
+                        'dots':false,
+                    }
+                },
+                'types' : {
+                    'default' : {
+                        'icon' : false
+                    },
+                    'file' : {
+                        'icon' : 'fa fa-file jstree-icon'
+                    },
+                    'folder':{
+                        'icon' : 'fa fa-folder jstree-icon'
+                    }
+                },
+                'plugins' : ['types', 'contextmenu', 'dnd'],
+                'contextmenu': {
+                    'items': function(node) {
+                        let items = {
+                        };
+
+                        // 如果是关键字节点，则添加删除选项
+                        if (node.original.istag) {
+                            items["rename_keyword"] = {
+                                "label": "关键字改名",
+                                "action": function(obj) {
+                                    renameKeyword(node.id,node.text);
+                                }
+                            };
+                            items["delete_keyword"] = {
+                                "label": "删除关键字",
+                                "action": function(obj) {
+                                    deleteKeyword(node.id);
+                                },
+                                "separator_before": true
+                            };
+                        }else{
+                            
+                            items["add_child_category"] = {
+                                "label": "添加子分类",
+                                "action": function(obj) {
+                                    showAddChildCategoryDialog(node.id);
+                                }
+                            },
+                            items["add_keyword"] = {
+                                "label": "添加关键字",
+                                "action": function(obj) {
+                                    showAddKeywordDialog(node.id);
+                                }
+                            }
+                            items["rename_category"] = {
+                                "label": "分类改名",
+                                "action": function(obj) {
+                                    renameCategory(node.id,node.text);
+
+                                }
+                            };
+                            items["delete_category"] = {
+                                "label": "删除分类",
+                                "action": function(obj) {
+                                    deleteCategory(node.id);
+
+                                }
+                            };
+
+                        }
+                        return items;
+                    }
+                },
+            
+                "dnd": {
+                    "copy": false,             // 禁止复制，仅允许移动
+                    "is_draggable": true,      // 允许节点被拖动
+                    "inside_pos": "last",      // 默认放置到目标节点的最后一个位置
+                    "touch": false             // 禁用触屏拖放（如果需要支持触屏设备可以设置为true）
+                }
+            });
+
+            // 展开所有节点
+            treeContainer.bind("loaded.jstree", function (e, data) {
+                treeContainer.jstree('open_all');
+            });
+            // 绑定点击事件处理
+            treeContainer
+            .on('click.jstree', function (e, data) {
+                var node = $(e.target).closest('li');
+                if (e.which === 1) { // 判断是否为左键点击
+                    // treeContainer.jstree('toggle_node', node);
+                }
+            })
+            .on('changed.jstree', function (e, data) {
+                const selectedNode = data.instance.get_selected(true)[0];
+                if (selectedNode) {
+                    if (selectedNode.original.istag) {
+                        showBooksByTag(selectedNode.text);
+                    }
+                }
+            })    // 拖放事件监听
+            .on('move_node.jstree', function(e, data) {
+                console.log("拖动完成");
+                console.log("节点被拖动:", data.node.id); // 被拖动的节点
+                console.log("移动到:", data.parent); // 新的父节点
+                if(data.parent>1000){
+                    updateCategoryTree();
+                }
+                else if(data.node.id>1000){
+                    fetch('/ebooks/tags/move/'+(data.node.id-1000)+'/'+data.parent,{
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ node: data.node })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.message=="Tag 移动成功"){
+                            updateCategoryTree();
+                        }else{
+                            alert("操作失败");
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+                else if(data.node.id<1000){
+                    fetch('/ebooks/categories/move/'+data.node.id+'/'+data.parent,{
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ node: data.node })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.message=="类别移动成功"){
+                            updateCategoryTree();
+                        }else{
+                            alert("操作失败");
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+
+            });
+            })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function updateCategoryTree(){
+            const treeContainer = $('#category-tree');
+
+        fetch('/ebooks/categories')
+            .then(response => response.json())
+            .then(data => {
+                const treeData = buildTreeData(data);
+
+                treeContainer.jstree(true).settings.core.data = treeData;
+                treeContainer.jstree(true).refresh();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+
+    function showAddKeywordDialog(parentId) {
+        const addKeywordInput = document.getElementById('add-keyword-input');
+        addKeywordInput.style.display = 'block';
+        addKeywordInput.querySelector('input[type="text"]').value = '';
+        addKeywordInput.querySelector('input[type="text"]').focus();
+
+        addKeywordInput.querySelector('.add-keyword-cancel').addEventListener('click', function() {
+            addKeywordInput.style.display = 'none';
+        });
+
+        
+        // 添加键盘事件监听器
+        addKeywordInput.querySelector('input[type="text"]').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') { // 检测是否按下了回车键
+                addKeywordInput.querySelector('.add-keyword-confirm').click(); // 触发确认按钮的点击事件
+            }
+        });
+
+        const confirmButton = addKeywordInput.querySelector('.add-keyword-confirm');
+
+        var a = function() {
+            const newKeyword = addKeywordInput.querySelector('input[type="text"]').value.trim();
+            if (newKeyword) {
+                addKeyword(parentId, newKeyword);
+                addKeywordInput.style.display = 'none';
+            } else {
+                alert('请输入有效的关键字');
+            }
+            confirmButton.removeEventListener('click', a);
+        };
+
+        confirmButton.addEventListener('click', a);
+    }
+
+    function addKeyword(parentId, keyword) {
+        fetch(`/ebooks/categories/${parentId}/keywords`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ keyword: keyword })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'Keyword added successfully') {
+                alert('关键字添加成功');
+                updateCategoryTree(); // 刷新树形界面
+            } else {
+                alert('添加关键字失败:'+data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function deleteKeyword(keywordId) {
+        const modal = document.getElementById('delete-keyword-modal');
+        modal.style.display = 'flex';
+
+        const cancelButton = modal.querySelector('.delete-keyword-cancel');
+        const confirmButton = modal.querySelector('.delete-keyword-confirm');
+
+        cancelButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        var a = function () {
+            modal.style.display = 'none';
+            fetch(`/ebooks/tags/${keywordId-1000}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Tag deleted successfully') {
+                    alert('关键字删除成功');
+                } else {
+                    alert('删除关键字失败：'+data.message);
+                }
+                updateCategoryTree(); // 刷新树形界面
+            })
+            .catch(error => console.error('Error:', error));
+            
+            confirmButton.removeEventListener('click', a);
+        }
+        confirmButton.addEventListener('click', a);
+    }
+
+    function renameKeyword(keywordId,text) {
+    const modal = document.getElementById('rename-keyword-modal');
+    modal.style.display = 'flex';
+
+    const cancelButton = modal.querySelector('.rename-keyword-cancel');
+    const confirmButton = modal.querySelector('.rename-keyword-confirm');
+    const inputField = modal.querySelector('input[type="text"]');
+
+    inputField.value = text; // 清空输入框
+    inputField.focus(); // 设置焦点
+
+        // 添加键盘事件监听器
+        modal.querySelector('input[type="text"]').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') { // 检测是否按下了回车键
+                modal.querySelector('.rename-keyword-confirm').click(); // 触发确认按钮的点击事件
+            }
+        });
+
+    cancelButton.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    var a = function () {
+        const newName = inputField.value.trim();
+        if (newName) {
+            modal.style.display = 'none';
+            updateKeywordName(keywordId, newName);
+        }
+        confirmButton.removeEventListener('click', a);
+    }
+    confirmButton.addEventListener('click', a);
+}
+
+    function updateKeywordName(keywordId, newName) {
+        fetch(`/ebooks/tags/${keywordId-1000}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: newName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'Keyword name updated successfully') {
+                alert('关键字更新成功');
+            } else {
+                alert('关键字更新失败：'+data.message);
+            }
+            // 刷新树形界面
+            updateCategoryTree();
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+
+
+    // 显示添加子分类的对话框
+    function showAddChildCategoryDialog(parentId) {
+        const addChildCategoryInput = document.getElementById('add-child-category-input');
+        addChildCategoryInput.style.display = 'block';
+        addChildCategoryInput.querySelector('input[type="text"]').value = '';
+        addChildCategoryInput.querySelector('input[type="text"]').focus();
+        addChildCategoryInput.querySelector('.add-child-category-cancel').addEventListener('click', function() {
+            addChildCategoryInput.style.display = 'none';
+        });
+
+        const confirmButton = addChildCategoryInput.querySelector('.add-child-category-confirm');
+        var b =function(event) {
+            if (event.key === 'Enter') { // 检测是否按下了回车键
+                confirmButton.click(); // 触发确认按钮的点击事件
+            }
+        };
+        addChildCategoryInput.querySelector('input[type="text"]').addEventListener('keydown', b);
+        
+        var a = function() {
+            const newCategoryName = addChildCategoryInput.querySelector('input[type="text"]').value.trim();
+            if (newCategoryName) {
+                addChildCategory(parentId, newCategoryName);
+                addChildCategoryInput.style.display = 'none';
+            } else {
+                alert('请输入有效的子分类名称');
+            }
+            confirmButton.removeEventListener('click', a);
+        };
+
+        confirmButton.addEventListener('click', a);
+    }
+
+    // 添加子分类的函数
+    function addChildCategory(parentId, categoryName) {
+        fetch(`/ebooks/categories/${parentId}/children`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: categoryName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'Subcategory created successfully') {
+                alert('子分类添加成功');
+            } else {
+                alert('添加子分类失败');
+            }
+            updateCategoryTree(); // 刷新树形界面
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function deleteCategory(keywordId) {
+        const modal = document.getElementById('delete-keyword-modal');
+        modal.style.display = 'flex';
+
+        const cancelButton = modal.querySelector('.delete-keyword-cancel');
+        const confirmButton = modal.querySelector('.delete-keyword-confirm');
+
+        cancelButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        var a = function () {
+            modal.style.display = 'none';
+            fetch(`/ebooks/categories/${keywordId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Category deleted successfully') {
+                    alert('删除分类成功');
+                } else {
+                    alert('删除分类失败：'+data.message);
+                }
+                updateCategoryTree();
+            })
+            .catch(error => console.error('Error:', error));
+            
+            confirmButton.removeEventListener('click', a);
+        }
+        confirmButton.addEventListener('click', a);
+    }
+
+    function renameCategory(keywordId,text) {
+        const modal = document.getElementById('rename-keyword-modal');
+        modal.style.display = 'flex';
+
+        const cancelButton = modal.querySelector('.rename-keyword-cancel');
+        const confirmButton = modal.querySelector('.rename-keyword-confirm');
+        const inputField = modal.querySelector('input[type="text"]');
+
+        inputField.value = text;
+        inputField.focus(); // 设置焦点
+
+        
+            // 添加键盘事件监听器
+            modal.querySelector('input[type="text"]').addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') { // 检测是否按下了回车键
+                    modal.querySelector('.rename-keyword-confirm').click(); // 触发确认按钮的点击事件
+                }
+            });
+
+        cancelButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        var a = function () {
+            const newName = inputField.value.trim();
+            if (newName) {
+                modal.style.display = 'none';
+                updateCategoryName(keywordId, newName);
+            }
+            confirmButton.removeEventListener('click', a);
+        }
+        confirmButton.addEventListener('click', a);
+    }
+
+    function updateCategoryName(keywordId, newName) {
+        fetch(`/ebooks/categories/${keywordId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: newName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'Category updated successfully') {
+                alert('类别名称更新成功');
+            } else {
+                alert('类别名称更新失败：'+data.message);
+            }
+            updateCategoryTree(); // 刷新树形界面
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // 构建树形结构数据
+    function buildTreeData(categories) {
+        const treeData = [];
+
+        categories.forEach(category => {
+            const node = {
+                'id'   : category.id,
+                'parent': category.parent,
+                'text' : category.name,
+                'type' : 'folder',
+                "icon" : "{{ url_for('static', filename='img/category-icon.png') }}"
+            };
+
+            if (category.subCategories && category.subCategories.length > 0) {
+                buildTreeData(category.subCategories).forEach(cat=>treeData.push(cat));
+            }
+
+            treeData.push(node); // 将分类节点添加到树形结构数据中
+        });
+
+        
+        categories.forEach(category => {
+            // 添加分类的标签节点
+            if (category.tags && category.tags.length > 0) {
+                category.tags.forEach(tag => {
+                    const tagNode = {
+                        'id': tag.id+1000, // 为了区分标签节点和分类节点，可以给标签节点的ID加上前缀
+                        'parent': category.id, // 设置标签节点的父节点为当前分类节点
+                        'text': tag.name,
+                        'type': 'file', // 设置标签节点的类型为'file'或其他自定义类型
+                        'istag': 'yes',
+                        "icon" : "{{ url_for('static', filename='img/keyword-icon.gif') }}"
+                        };
+                    treeData.push(tagNode);
+                });
+            }
+        });
+
+        return treeData;
+    }
+
+    // 初始化树形界面
+    initCategoryTree();
+</script>
+<p class="copyright">copyright © 2024 epicblue</p>
+</body>
+</html>
