@@ -137,10 +137,9 @@
                         'core' : {
                             'data' : treeData,
                             'themes': {
-                                "theme" : "apple",
                                 'responsive': true,
-                                'dots' : true,
-                                'stripes': true
+                                'dots' : false,
+                                'stripes': true,
                             }
                         },
                         'types' : {
@@ -151,7 +150,7 @@
                                 'icon' : 'fa fa-file jstree-icon'
                             }
                         },
-                        'plugins' : ["themes", 'types', 'contextmenu',],
+                        'plugins' : ['types', 'contextmenu'],
                         'contextmenu': {
                             'items': function(node) {
                                 let items = {};
