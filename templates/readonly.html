@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>电子书上传 epicblue</title>
+    <title>共享电子书 epicblue</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.min.css') }}" />
     <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jstree.min.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes/default/style.css') }}" />
 </head>
 <body>
     <div class="container">
@@ -136,7 +137,9 @@
                         'core' : {
                             'data' : treeData,
                             'themes': {
+                                "theme" : "apple",
                                 'responsive': true,
+                                'dots' : true,
                                 'stripes': true
                             }
                         },
@@ -148,7 +151,7 @@
                                 'icon' : 'fa fa-file jstree-icon'
                             }
                         },
-                        'plugins' : ['types', 'contextmenu'],
+                        'plugins' : ["themes", 'types', 'contextmenu',],
                         'contextmenu': {
                             'items': function(node) {
                                 let items = {};
@@ -168,7 +171,7 @@
                             if (selectedNode.original.istag) {
                                 showBooksByTag(selectedNode.text);
                             } else {
-                                data.instance.toggle_node(selectedNode);
+                                // data.instance.toggle_node(selectedNode);
                             }
                         }
                     });

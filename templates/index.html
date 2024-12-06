@@ -476,7 +476,7 @@
             .on('click.jstree', function (e, data) {
                 var node = $(e.target).closest('li');
                 if (e.which === 1) { // 判断是否为左键点击
-                    treeContainer.jstree('toggle_node', node);
+                    // treeContainer.jstree('toggle_node', node);
                 }
             })
             .on('changed.jstree', function (e, data) {
