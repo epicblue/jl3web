@@ -13,11 +13,16 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     position: relative; /* 确保绝对定位的子元素相对于这个容器定位 */
+
+    display: flex; /* 使用Flex布局 */
+    flex-direction: column; /* 垂直排列 */
 }
 
 .row {
-    display: flex; /* 使用flex布局 */
+    flex: 1; /* 让container占据剩余的空间 */
     justify-content: space-between; /* 分隔两个部分 */
+    display: flex; /* 使用Flex布局 */
+    flex-direction: row; /* 垂直排列 */
 }
 
 #category-tree {
@@ -29,7 +34,7 @@ body {
 }
 
 #download-list {
-    flex: 2.5; /* 自动分配两倍的空间 */
+    flex: 2.5; /* 自动分配空间 */
     margin-top: 0px; /* 设置相同的顶部外边距 */
     overflow-y: auto; /* 添加滚动条 */
     max-height: 500px; /* 设置最大高度 */

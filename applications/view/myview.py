@@ -10,9 +10,23 @@ import os
 bp = Blueprint('ebooks', __name__, url_prefix='/ebooks')
 
 def get_upload_folder():
+    """
+    获取上传文件夹的路径。
+
+    Args:
+        无
+
+    Returns:
+        str: 上传文件夹的绝对路径。
+
+    """
+    # 获取当前文件的绝对路径
     basedir = os.path.abspath(os.path.dirname(__file__))
+    # 拼接上传文件夹的路径
     path = os.path.join(basedir, 'uploads')
+    # 创建上传文件夹，如果文件夹已存在则不报错
     os.makedirs(path, exist_ok=True)
+    # 返回上传文件夹的路径
     return path
 
 # 主页

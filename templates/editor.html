@@ -415,13 +415,13 @@
                         // 如果是关键字节点，则添加删除选项
                         if (node.original.istag) {
                             items["rename_keyword"] = {
-                                "label": "关键字改名",
+                                "label": "改名",
                                 "action": function(obj) {
                                     renameKeyword(node.id,node.text);
                                 }
                             };
                             items["delete_keyword"] = {
-                                "label": "删除关键字",
+                                "label": "删除",
                                 "action": function(obj) {
                                     deleteKeyword(node.id);
                                 },
@@ -442,14 +442,14 @@
                                 }
                             }
                             items["rename_category"] = {
-                                "label": "分类改名",
+                                "label": "改名",
                                 "action": function(obj) {
                                     renameCategory(node.id,node.text);
 
                                 }
                             };
                             items["delete_category"] = {
-                                "label": "删除分类",
+                                "label": "分类",
                                 "action": function(obj) {
                                     deleteCategory(node.id);
 
