@@ -17,6 +17,8 @@ class User(db.Model, UserMixin):
     create_at = db.Column(db.DateTime, default=datetime.datetime.now, comment='创建时间')
     update_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now, comment='创建时间')
     role = db.relationship('Role', secondary="admin_user_role", backref=db.backref('user'), lazy='dynamic')
+    # 新增电子书的反向关系
+    uploaded_ebooks = db.relationship('Ebook', back_populates='uploaded_by')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

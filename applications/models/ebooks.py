@@ -1,4 +1,5 @@
 from applications.extensions import db
+from applications.models import User
 
 # 关联表
 ebook_tag = db.Table(
@@ -14,9 +15,12 @@ class Ebook(db.Model):
     author = db.Column(db.String(50), nullable=False)
     file_path = db.Column(db.String(200), nullable=False)
     tags = db.relationship("Tag", secondary=ebook_tag, back_populates="ebooks")
-    uploaded_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # 添加上传用户属性
-
+    uploaded_by_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'), nullable=True)  # 添加上传用户属性
+    uploaded_by = db.relationship("User", back_populates="uploaded_ebooks")  # 反向关系
+    
     def __repr__(self):
+        # 返回Ebook对象的字符串表示
+        # 返回Ebook对象的字符串表示
         return f'<Ebook {self.title}>'
 
 # 标签模型
