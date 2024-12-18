@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template
+from flask_login import current_user
 from applications.common.utils.rights import authorize
 from werkzeug.utils import secure_filename
 from flask import request, jsonify, send_from_directory, render_template
@@ -67,7 +68,7 @@ def upload_ebook():
                     db.session.add(tag)
                 tags.append(tag)
 
-        new_ebook = Ebook(title=title, author=author, file_path=filename, tags=tags)
+        new_ebook = Ebook(title=title, author=author, file_path=filename, tags=tags, upload_user_id=current_user.id)
         db.session.add(new_ebook)
         db.session.commit()
         return jsonify({"message": "Ebook uploaded successfully", "filename": filename}), 201

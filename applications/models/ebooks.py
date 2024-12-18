@@ -14,6 +14,7 @@ class Ebook(db.Model):
     author = db.Column(db.String(50), nullable=False)
     file_path = db.Column(db.String(200), nullable=False)
     tags = db.relationship("Tag", secondary=ebook_tag, back_populates="ebooks")
+    uploaded_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # 添加上传用户属性
 
     def __repr__(self):
         return f'<Ebook {self.title}>'
