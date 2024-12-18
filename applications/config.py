@@ -8,7 +8,7 @@ from datetime import timedelta
 class BaseConfig:
     SUPERADMIN = 'admin'
 
-    SYSTEM_NAME = 'Logo Admin'
+    SYSTEM_NAME = '电子书管理后台'
     # 主题面板的链接列表配置
     SYSTEM_PANEL_LINKS = [
         {

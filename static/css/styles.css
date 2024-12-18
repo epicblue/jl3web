@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-    max-width: 1200px; /* 增加宽度以适应并排布局 */
+    max-width: 2200px; /* 增加宽度以适应并排布局 */
     margin: 0 auto;
     padding: 20px;
     background-color: #fff;
