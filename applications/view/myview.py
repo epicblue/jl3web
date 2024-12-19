@@ -44,11 +44,15 @@ def ebookseditor():
 # 上传电子书
 @bp.route('/upload', methods=['POST'])
 def upload_ebook():
+    # 检查请求中是否包含文件部分
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
+
     file = request.files['file']
+    # 检查文件名是否为空
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
+
     if file:
         original_filename = secure_filename(file.filename)
         base, ext = os.path.splitext(original_filename)
@@ -65,8 +69,11 @@ def upload_ebook():
         # 保存文件
         file.save(os.path.join(get_upload_folder(), filename))
 
+        # 获取表单中的标题
         title = request.form.get('title')
+        # 获取表单中的作者
         author = request.form.get('author')
+        # 获取表单中的标签字符串
         tags_str = request.form.get('tags', '')  # 获取标签字符串
         
         # 解析标签字符串
@@ -80,11 +87,14 @@ def upload_ebook():
                     root_category = Category.query.filter_by(name='root').first()
                     tag = Tag(name=tag_name, category_id=root_category.id)
                     db.session.add(tag)
+                # 将解析后的标签添加到列表中
                 tags.append(tag)
 
-        new_ebook = Ebook(title=title, author=author, file_path=filename, tags=tags, upload_user_id=current_user.id)
+        # 创建新的电子书记录
+        new_ebook = Ebook(title=title, author=author, file_path=filename, tags=tags, uploaded_by_id=current_user.id)
         db.session.add(new_ebook)
         db.session.commit()
+        # 返回上传成功的消息和文件名
         return jsonify({"message": "Ebook uploaded successfully", "filename": filename}), 201
 # 获取指定标签下的所有电子书
 @bp.route('/books/tags/<string:tag_name>', methods=['GET'])
@@ -359,7 +369,7 @@ def update_keyword_name(keyword_id):
 @bp.route('/books', methods=['GET'])
 def get_books():
     from sqlalchemy.orm import joinedload
-    ebooks = Ebook.query.options(joinedload('tags')).all()
+    ebooks = Ebook.query.options(joinedload(Ebook.tags)).all()
     books_data = []
     for ebook in ebooks:
         book_data = {
