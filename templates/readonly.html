@@ -31,6 +31,9 @@
     </div>
 
     <script>
+        $(window).resize(function() {
+            $('#category-tree').height($(window).height() - 180);
+        }).resize();
         // 处理搜索表单提交
         document.getElementById('search-form').addEventListener('submit', function(event) {
             event.preventDefault();

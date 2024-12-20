@@ -61,12 +61,12 @@
 </div>
 
 <div id="add-keyword-input" class="add-tag-input" style="display: none;">
-    <input type="text" placeholder="输入新关键字">
+    <input type="text" placeholder="输入新标签">
     <button class="add-keyword-cancel">取消</button>
     <button class="add-keyword-confirm">确认</button>
 </div>
 
-<!-- 删除关键字的模态框 -->
+<!-- 删除标签的模态框 -->
 <div id="delete-keyword-modal" class="modal" style="display: none;">
     <div class="modal-content">
         <p>确定要删除此节点吗？</p>
@@ -74,10 +74,10 @@
         <button class="delete-keyword-confirm">确认</button>
     </div>
 </div>
-<!-- 改名关键字、类别的模态框 -->
+<!-- 改名标签、类别的模态框 -->
 <div id="rename-keyword-modal" class="modal" style="display: none;">
     <div class="modal-content">
-        <p>请输入新的关键字名称：</p>
+        <p>请输入新的标签名称：</p>
         <input type="text" placeholder="新名称">
         <button class="rename-keyword-cancel">取消</button>
         <button class="rename-keyword-confirm">确认</button>
@@ -412,7 +412,7 @@
                         let items = {
                         };
 
-                        // 如果是关键字节点，则添加删除选项
+                        // 如果是标签节点，则添加删除选项
                         if (node.original.istag) {
                             items["rename_keyword"] = {
                                 "label": "改名",
@@ -436,7 +436,7 @@
                                 }
                             },
                             items["add_keyword"] = {
-                                "label": "添加关键字",
+                                "label": "添加标签",
                                 "action": function(obj) {
                                     showAddKeywordDialog(node.id);
                                 }
@@ -579,7 +579,7 @@
                 addKeyword(parentId, newKeyword);
                 addKeywordInput.style.display = 'none';
             } else {
-                alert('请输入有效的关键字');
+                alert('请输入有效的标签名称');
             }
             confirmButton.removeEventListener('click', a);
         };
@@ -598,10 +598,10 @@
         .then(response => response.json())
         .then(data => {
             if (data.message === 'Keyword added successfully') {
-                alert('关键字添加成功');
+                alert('标签添加成功');
                 updateCategoryTree(); // 刷新树形界面
             } else {
-                alert('添加关键字失败:'+data.message);
+                alert('添加标签失败:'+data.message);
             }
         })
         .catch(error => console.error('Error:', error));
@@ -626,9 +626,9 @@
             .then(response => response.json())
             .then(data => {
                 if (data.message === 'Tag deleted successfully') {
-                    alert('关键字删除成功');
+                    alert('标签删除成功');
                 } else {
-                    alert('删除关键字失败：'+data.message);
+                    alert('删除标签失败：'+data.message);
                 }
                 updateCategoryTree(); // 刷新树形界面
             })
@@ -683,9 +683,9 @@
         .then(response => response.json())
         .then(data => {
             if (data.message === 'Keyword name updated successfully') {
-                alert('关键字更新成功');
+                alert('标签更新成功');
             } else {
-                alert('关键字更新失败：'+data.message);
+                alert('标签更新失败：'+data.message);
             }
             // 刷新树形界面
             updateCategoryTree();
